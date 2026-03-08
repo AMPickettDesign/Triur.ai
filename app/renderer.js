@@ -32,6 +32,24 @@ function applyColorblind(mode) {
   if (mode && mode !== 'none') {
     document.body.classList.add(`colorblind-${mode}`);
   }
+  // Update toggle switches in settings
+  if ($('toggle-protanopia')) $('toggle-protanopia').checked = (mode === 'protanopia');
+  if ($('toggle-deuteranopia')) $('toggle-deuteranopia').checked = (mode === 'deuteranopia');
+  if ($('toggle-tritanopia')) $('toggle-tritanopia').checked = (mode === 'tritanopia');
+}
+
+function updateColorblindFromToggles() {
+  const protanopia = $('toggle-protanopia')?.checked;
+  const deuteranopia = $('toggle-deuteranopia')?.checked;
+  const tritanopia = $('toggle-tritanopia')?.checked;
+  
+  let mode = 'none';
+  if (tritanopia) mode = 'tritanopia';
+  else if (deuteranopia) mode = 'deuteranopia';
+  else if (protanopia) mode = 'protanopia';
+  
+  applyColorblind(mode);
+  return mode;
 }
 
 // ─── IPC ───
@@ -326,8 +344,7 @@ const PROFILE_FIELDS = {
   'profile-birthday': 'birthday', 'profile-about': 'about_me',
   'profile-interests': 'interests', 'profile-pets': 'pets',
   'profile-people': 'important_people', 'profile-comm-style': 'communication_style',
-  'profile-avoid': 'avoid_topics', 'profile-notes': 'custom_notes',
-  'profile-colorblind': 'colorblind_mode'
+  'profile-avoid': 'avoid_topics', 'profile-notes': 'custom_notes'
 };
 
 $('btn-settings').addEventListener('click', async () => { settingsOverlay.classList.add('open'); await loadProfile(); });
@@ -338,17 +355,21 @@ async function loadProfile() {
   const p = await apiGet('/api/profile');
   if (!p) return;
   Object.entries(PROFILE_FIELDS).forEach(([elId, key]) => { const el = $(elId); if (el) el.value = p[key] || ''; });
+  // Also set colorblind toggles
+  if (p.colorblind_mode) applyColorblind(p.colorblind_mode);
 }
 
 $('settings-save').addEventListener('click', async () => {
   const data = {};
   Object.entries(PROFILE_FIELDS).forEach(([elId, key]) => { const el = $(elId); if (el) data[key] = el.value.trim(); });
   data.onboarding_complete = true; // preserve onboarding flag
+  // Get colorblind mode from toggles instead of dropdown
+  data.colorblind_mode = updateColorblindFromToggles();
   $('settings-save').disabled = true; $('settings-save').textContent = 'Saving...';
   const r = await apiPost('/api/profile', data);
   $('settings-save').disabled = false; $('settings-save').textContent = 'Save Profile';
   // Apply colorblind mode immediately
-  if (data.colorblind_mode) applyColorblind(data.colorblind_mode);
+  applyColorblind(data.colorblind_mode);
   const status = $('settings-status');
   status.textContent = r && r.saved ? 'Saved!' : 'Failed to save.';
   setTimeout(() => { status.textContent = ''; }, 3000);

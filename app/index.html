@@ -408,15 +408,39 @@
         <!-- Accessibility Section -->
         <div class="settings-section">
           <h3 class="settings-section-title">Accessibility</h3>
-          <p class="settings-section-desc">Adjust how the app looks and feels for you.</p>
-          <div class="settings-field">
-            <label for="profile-colorblind">Colorblind Mode</label>
-            <select id="profile-colorblind">
-              <option value="none">None</option>
-              <option value="protanopia">Protanopia (red-blind)</option>
-              <option value="deuteranopia">Deuteranopia (green-blind)</option>
-              <option value="tritanopia">Tritanopia (blue-blind)</option>
-            </select>
+          <p class="settings-section-desc">Adjust how the app looks for you.</p>
+          
+          <div class="settings-toggle-row">
+            <div>
+              <div class="settings-toggle-label">Protanopia Mode</div>
+              <div class="settings-toggle-desc">For red-blindness</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-protanopia" onchange="updateColorblindFromToggles()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="settings-toggle-row">
+            <div>
+              <div class="settings-toggle-label">Deuteranopia Mode</div>
+              <div class="settings-toggle-desc">For green-blindness</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-deuteranopia" onchange="updateColorblindFromToggles()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="settings-toggle-row">
+            <div>
+              <div class="settings-toggle-label">Tritanopia Mode</div>
+              <div class="settings-toggle-desc">For blue-blindness</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-tritanopia" onchange="updateColorblindFromToggles()">
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
 

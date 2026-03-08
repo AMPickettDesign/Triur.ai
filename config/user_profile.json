@@ -1,14 +1,14 @@
 {
-  "display_name": "",
-  "pronouns": "",
-  "birthday": "",
-  "about_me": "",
-  "interests": "",
-  "pets": "",
+  "display_name": "Ashley",
+  "pronouns": "she/her",
+  "birthday": "July 9th",
+  "about_me": "Artist, Designer, cat mom, gardener, gamer",
+  "interests": "Artist, Designer, cat mom, gardener, gamer",
+  "pets": "3, harrison, Toby and Ash",
   "important_people": "",
-  "communication_style": "casual",
   "avoid_topics": "",
   "custom_notes": "",
+  "communication_style": "casual",
   "colorblind_mode": "none",
-  "onboarding_complete": false
+  "onboarding_complete": true
 }

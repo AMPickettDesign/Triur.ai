@@ -42,10 +42,10 @@ function startPythonServer() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 750,
-    minWidth: 800,
-    minHeight: 650,
+    width: 480,
+    height: 800,
+    minWidth: 400,
+    minHeight: 600,
     title: 'Triur.ai',
     frame: false,            // Custom title bar (we'll make our own)
     transparent: false,

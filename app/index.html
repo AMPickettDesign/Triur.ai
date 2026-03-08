@@ -45,6 +45,63 @@
   <!-- Main layout -->
   <div id="main">
 
+    <!-- Compact Sidebar (horizontal, above chat) -->
+    <div id="sidebar">
+      <div class="widget" id="widget-mood">
+        <div class="widget-header">
+          <span class="widget-icon">&#9672;</span>
+          <span class="widget-title">Mood</span>
+        </div>
+        <div class="widget-content">
+          <div id="mood-dominant">...</div>
+          <div id="mood-energy-bar">
+            <div class="bar-label">Energy</div>
+            <div class="bar-track"><div class="bar-fill" id="energy-fill" style="width:50%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="widget" id="widget-relationship">
+        <div class="widget-header">
+          <span class="widget-icon">&#9825;</span>
+          <span class="widget-title">Feelings</span>
+        </div>
+        <div class="widget-content">
+          <div id="rel-opinion">...</div>
+        </div>
+      </div>
+
+      <div class="widget" id="widget-memory">
+        <div class="widget-header">
+          <span class="widget-icon">&#10022;</span>
+          <span class="widget-title">Memory</span>
+          <button id="memory-toggle-btn" class="memory-toggle small">View</button>
+        </div>
+        <div class="widget-content">
+          <div id="memory-stats">
+            <div class="mem-stat">Facts: <span id="mem-facts">0</span></div>
+          </div>
+          <div id="memory-dropdown" class="memory-dropdown">
+            <div class="mem-section">
+              <div class="mem-section-header" data-section="facts">Facts &#9656;</div>
+              <div class="mem-section-content" id="mem-facts-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="widget" id="widget-time">
+        <div class="widget-header">
+          <span class="widget-icon">&#9719;</span>
+          <span class="widget-title">Time</span>
+        </div>
+        <div class="widget-content">
+          <div id="time-display">--:--</div>
+          <div id="date-display">...</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Chat area -->
     <div id="chat-area">
       <div id="avatar-space">
@@ -113,13 +170,12 @@
         <div class="widget-header">
           <span class="widget-icon">&#10022;</span>
           <span class="widget-title">Memory</span>
-          <button id="memory-toggle-btn" class="memory-toggle small">View &#9662;</button>
+          <button id="memory-toggle-btn" class="memory-toggle small">View</button>
         </div>
         <div class="widget-content">
           <div id="memory-stats">
-            <div class="mem-stat">Conversations: <span id="mem-convos">0</span></div>
-            <div class="mem-stat">Facts known: <span id="mem-facts">0</span></div>
-            <div class="mem-stat">Reflections: <span id="mem-journals">0</span></div>
+            <div class="mem-stat">Convos: <span id="mem-convos">0</span></div>
+            <div class="mem-stat">Facts: <span id="mem-facts">0</span></div>
           </div>
           <div id="memory-dropdown" class="memory-dropdown">
             <div class="mem-section">
@@ -129,10 +185,6 @@
             <div class="mem-section">
               <div class="mem-section-header" data-section="opinions">Opinions &#9656;</div>
               <div class="mem-section-content" id="mem-opinions-list"></div>
-            </div>
-            <div class="mem-section">
-              <div class="mem-section-header" data-section="patterns">Patterns &#9656;</div>
-              <div class="mem-section-content" id="mem-patterns-list"></div>
             </div>
           </div>
         </div>
@@ -151,15 +203,15 @@
     </div>
   </div>
 
-  <!-- Onboarding Overlay (first run only) -->
+    <!-- Onboarding Overlay (first run only) -->
   <div id="onboarding-overlay" class="onboarding-overlay">
     <div class="onboarding-container">
 
       <!-- Step 1: Welcome -->
       <div class="onboarding-step active" data-step="1">
         <div class="onboarding-header">
-          <h1 class="onboarding-title">Sibling AI</h1>
-          <p class="onboarding-subtitle">Three siblings. Real personalities. Your call.</p>
+          <h1 class="onboarding-title">Triur.ai</h1>
+          <p class="onboarding-subtitle">Your personal AI companion.</p>
         </div>
         <div class="onboarding-body">
           <p class="onboarding-text">Before you meet them, let's get a few things out of the way so they know who they're talking to.</p>

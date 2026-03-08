@@ -52,6 +52,15 @@ function updateColorblindFromToggles() {
   return mode;
 }
 
+// ─── Sidebar Toggle ───
+const sidebarEl = $('sidebar');
+const sidebarBtn = $('btn-sidebar');
+if (sidebarBtn) {
+  sidebarBtn.addEventListener('click', () => {
+    sidebarEl.classList.toggle('open');
+  });
+}
+
 // ─── IPC ───
 const { ipcRenderer } = require('electron');
 $('btn-minimize').addEventListener('click', () => ipcRenderer.send('window-minimize'));

@@ -1,4 +1,4 @@
-# Triur_ai
+# Triur.ai
 
 Your personal AI companion that actually grows with you.
 
@@ -6,7 +6,7 @@ Your personal AI companion that actually grows with you.
 
 ## What is this?
 
-Triur_ai (Gaelic for "three") is an AI that gets to know you over time. It's not just a chatbot you reset every session — it remembers you, learns your preferences, forms opinions about you, and evolves as a person through your conversations.
+Triur.ai (Gaelic for "three") is an AI that gets to know you over time. It's not just a chatbot you reset every session — it remembers you, learns your preferences, forms opinions about you, and evolves as a person through your conversations.
 
 Think of it like having a digital companion that lives on your PC. It knows your name, your interests, your pets, what you like to talk about. And it actually *cares* (in an AI way) about your interactions.
 

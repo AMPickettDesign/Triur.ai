@@ -1,5 +1,5 @@
 /**
- * Sibling AI — Main Process
+ * Triur.ai — Main Process
  * Creates the Electron window, manages system tray,
  * and starts the Python brain server.
  */
@@ -12,10 +12,10 @@ let mainWindow = null;
 let tray = null;
 let pythonProcess = null;
 
-// Path to Abi's Python backend
-const ABI_ROOT = path.join(__dirname, '..');
-const VENV_PYTHON = path.join(ABI_ROOT, 'venv', 'Scripts', 'python.exe');
-const SERVER_SCRIPT = path.join(ABI_ROOT, 'src', 'server.py');
+// Path to Triur.ai Python backend
+const TRIUR_ROOT = path.join(__dirname, '..');
+const VENV_PYTHON = path.join(TRIUR_ROOT, 'venv', 'Scripts', 'python.exe');
+const SERVER_SCRIPT = path.join(TRIUR_ROOT, 'src', 'server.py');
 
 function startPythonServer() {
   console.log('[Abi] Starting Python brain server...');
@@ -28,15 +28,15 @@ function startPythonServer() {
   });
 
   pythonProcess.stdout.on('data', (data) => {
-    console.log(`[Abi Brain] ${data.toString().trim()}`);
+    console.log(`[Triur.ai Brain] ${data.toString().trim()}`);
   });
 
   pythonProcess.stderr.on('data', (data) => {
-    console.log(`[Abi Brain Error] ${data.toString().trim()}`);
+    console.log(`[Triur.ai Brain Error] ${data.toString().trim()}`);
   });
 
   pythonProcess.on('close', (code) => {
-    console.log(`[Abi Brain] Process exited with code ${code}`);
+    console.log(`[Triur.ai Brain] Process exited with code ${code}`);
   });
 }
 
@@ -46,7 +46,7 @@ function createWindow() {
     height: 700,
     minWidth: 800,
     minHeight: 600,
-    title: 'Abi',
+    title: 'Triur.ai',
     frame: false,            // Custom title bar (we'll make our own)
     transparent: false,
     backgroundColor: '#1a1a2e',

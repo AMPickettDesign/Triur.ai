@@ -308,7 +308,7 @@
         </div>
         <div class="onboarding-footer">
           <span class="onboarding-step-dots">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span>
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span>
           </span>
           <div class="onboarding-nav">
             <button class="onboarding-btn secondary" data-action="back">Back</button>
@@ -317,8 +317,51 @@
         </div>
       </div>
 
-      <!-- Step 6: Meet the Siblings -->
+      <!-- Step 6: Theme -->
       <div class="onboarding-step" data-step="6">
+        <div class="onboarding-header">
+          <h2 class="onboarding-title">Look & Feel</h2>
+          <p class="onboarding-subtitle">Pick your vibe.</p>
+        </div>
+        <div class="onboarding-body">
+          <p class="onboarding-hint" style="margin-bottom: 16px;">You can change this anytime in Settings.</p>
+          <div class="onboarding-theme-cards">
+            <button class="theme-card" data-theme="light">
+              <div class="theme-preview light-preview">
+                <div class="theme-preview-bar"></div>
+                <div class="theme-preview-circle"></div>
+              </div>
+              <div class="theme-card-label">Light</div>
+            </button>
+            <button class="theme-card" data-theme="dark">
+              <div class="theme-preview dark-preview">
+                <div class="theme-preview-bar"></div>
+                <div class="theme-preview-circle"></div>
+              </div>
+              <div class="theme-card-label">Dark</div>
+            </button>
+            <button class="theme-card" data-theme="system" style="grid-column: span 2;">
+              <div class="theme-preview system-preview">
+                <div class="theme-preview-bar"></div>
+                <div class="theme-preview-circle"></div>
+              </div>
+              <div class="theme-card-label">Match my system</div>
+            </button>
+          </div>
+        </div>
+        <div class="onboarding-footer">
+          <span class="onboarding-step-dots">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span>
+          </span>
+          <div class="onboarding-nav">
+            <button class="onboarding-btn secondary" data-action="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 7: Meet the Siblings -->
+      <div class="onboarding-step" data-step="7">
         <div class="onboarding-header">
           <h2 class="onboarding-title">Meet the Siblings</h2>
           <p class="onboarding-subtitle">Pick who you want to talk to first. Or don't.</p>
@@ -357,7 +400,7 @@
         </div>
         <div class="onboarding-footer">
           <span class="onboarding-step-dots">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span>
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span>
           </span>
           <div class="onboarding-nav">
             <button class="onboarding-btn secondary" data-action="back">Back</button>
@@ -431,6 +474,45 @@
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="toggle-tritanopia" onchange="updateColorblindFromToggles()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Theme Section -->
+        <div class="settings-section">
+          <h3 class="settings-section-title">Appearance</h3>
+          <p class="settings-section-desc">Choose how Triur.ai looks.</p>
+          
+          <div class="settings-toggle-row">
+            <div>
+              <div class="settings-toggle-label">Light Mode</div>
+              <div class="settings-toggle-desc">Always use light theme</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="radio" name="theme-mode" id="theme-light" value="light">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="settings-toggle-row">
+            <div>
+              <div class="settings-toggle-label">Dark Mode</div>
+              <div class="settings-toggle-desc">Always use dark theme</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="radio" name="theme-mode" id="theme-dark" value="dark">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="settings-toggle-row">
+            <div>
+              <div class="settings-toggle-label">Match System</div>
+              <div class="settings-toggle-desc">Follow your computer's setting</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="radio" name="theme-mode" id="theme-system" value="system">
               <span class="toggle-slider"></span>
             </label>
           </div>

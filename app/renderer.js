@@ -420,6 +420,8 @@ async function loadSiblingStatuses() {
   }
 }
 
+let themeMode = 'system'; // 'light', 'dark', or 'system'
+
 // ─── Time Widget ───
 function updateTime() {
   const now = new Date();
@@ -428,13 +430,26 @@ function updateTime() {
   if (dateDisplay) dateDisplay.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
   const timeMini = $('time-mini');
   if (timeMini) timeMini.textContent = timeStr;
+  
+  // Apply theme based on mode
   const hour = now.getHours();
-  if (hour >= 6 && hour < 18) {
-    document.body.classList.add('daytime');
+  const isDaytime = hour >= 6 && hour < 18;
+  
+  if (themeMode === 'light') {
     document.body.classList.remove('nighttime');
-  } else {
-    document.body.classList.add('nighttime');
+    document.body.classList.add('daytime');
+  } else if (themeMode === 'dark') {
     document.body.classList.remove('daytime');
+    document.body.classList.add('nighttime');
+  } else {
+    // System default - follow time
+    if (isDaytime) {
+      document.body.classList.add('daytime');
+      document.body.classList.remove('nighttime');
+    } else {
+      document.body.classList.add('nighttime');
+      document.body.classList.remove('daytime');
+    }
   }
 }
 
@@ -600,6 +615,9 @@ async function loadProfile() {
   Object.entries(PROFILE_FIELDS).forEach(([elId, key]) => { const el = $(elId); if (el) el.value = p[key] || ''; });
   // Also set colorblind toggles
   if (p.colorblind_mode) applyColorblind(p.colorblind_mode);
+  // Set theme mode radio
+  const themeMode = p.theme_mode || 'system';
+  document.querySelectorAll('input[name="theme-mode"]').forEach(r => { r.checked = r.value === themeMode; });
 }
 
 $('settings-save').addEventListener('click', async () => {
@@ -608,11 +626,17 @@ $('settings-save').addEventListener('click', async () => {
   data.onboarding_complete = true; // preserve onboarding flag
   // Get colorblind mode from toggles instead of dropdown
   data.colorblind_mode = updateColorblindFromToggles();
+  // Get theme mode
+  const themeRadio = document.querySelector('input[name="theme-mode"]:checked');
+  data.theme_mode = themeRadio ? themeRadio.value : 'system';
   $('settings-save').disabled = true; $('settings-save').textContent = 'Saving...';
   const r = await apiPost('/api/profile', data);
   $('settings-save').disabled = false; $('settings-save').textContent = 'Save Profile';
   // Apply colorblind mode immediately
   applyColorblind(data.colorblind_mode);
+  // Apply theme mode immediately
+  themeMode = data.theme_mode;
+  updateTime();
   const status = $('settings-status');
   status.textContent = r && r.saved ? 'Saved!' : 'Failed to save.';
   setTimeout(() => { status.textContent = ''; }, 3000);
@@ -760,7 +784,17 @@ document.querySelectorAll('.onboarding-btn[data-action]').forEach(btn => {
   });
 });
 
-// Wire up sibling card selection (step 6)
+// Wire up theme card selection (step 6)
+let selectedTheme = 'system';
+document.querySelectorAll('.theme-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedTheme = card.dataset.theme;
+  });
+});
+
+// Wire up sibling card selection (step 7)
 document.querySelectorAll('.sibling-card').forEach(card => {
   card.addEventListener('click', async () => {
     let chosen = card.dataset.sibling;
@@ -779,6 +813,7 @@ document.querySelectorAll('.sibling-card').forEach(card => {
     // Get colorblind selection
     const cbRadio = document.querySelector('input[name="colorblind"]:checked');
     profileData.colorblind_mode = cbRadio ? cbRadio.value : 'none';
+    profileData.theme_mode = selectedTheme;
     profileData.onboarding_complete = true;
 
     // Disable all cards while saving
@@ -1187,6 +1222,12 @@ async function boot() {
 
   // Returning user — apply saved colorblind mode
   if (profile && profile.colorblind_mode) applyColorblind(profile.colorblind_mode);
+
+  // Apply saved theme mode
+  if (profile && profile.theme_mode) {
+    themeMode = profile.theme_mode;
+    updateTime(); // Apply the theme immediately
+  }
 
   // Initialize sprites
   initSpriteAssignments(profile);

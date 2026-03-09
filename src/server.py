@@ -284,7 +284,7 @@ def first_message():
 def nudge():
     """Check if the active sibling wants to say something unprompted.
     Called periodically by the renderer. Returns messages or empty."""
-    global last_activity, nudge_cooldowns
+    global last_activity
 
     now = datetime.now()
     sid = active_id

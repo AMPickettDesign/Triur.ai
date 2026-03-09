@@ -148,7 +148,12 @@ These features may become available through optional support/subscriptions:
 
 ## Credits
 
-Built with:
+**Sprite Assets:**
+- Fantasy Chibi Characters by [Craftpix.net](https://craftpix.net/)
+  - Female Pack: craftpix-net-211148
+  - Male Pack: craftpix-net-439247
+
+**Built with:**
 - Electron
 - Flask
 - Ollama (dolphin-llama3:8b)

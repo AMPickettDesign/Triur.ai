@@ -29,7 +29,7 @@
   --sib-gradient: linear-gradient(135deg, #C75F71, #A2AE9D);
   --glass-blur: 18px;
   --r-sm: 14px; --r-md: 20px; --r-lg: 26px; --r-xl: 32px; --r-pill: 999px;
-  --titlebar-h: 40px;
+  --titlebar-h: 56px;
   --bento-gap: 8px;
   --bento-pad: 10px;
   --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -151,15 +151,16 @@ body {
   position: relative; z-index: 80;
 }
 .titlebar-drag { display: flex; align-items: center; gap: 10px; flex: 1; }
-.titlebar-title { font-weight: 700; font-size: 14px; color: var(--accent); letter-spacing: 0.3px; position: absolute; left: 50%; transform: translateX(-50%); opacity: 0; }
+.titlebar-title { font-weight: 700; font-size: 14px; color: var(--accent); letter-spacing: 0.3px; }
 .titlebar-status { font-size: 11px; color: var(--text-3); font-style: italic; }
-.titlebar-buttons { display: flex; gap: 4px; -webkit-app-region: no-drag; }
+.titlebar-buttons { display: flex; gap: 6px; -webkit-app-region: no-drag; }
 .tb-btn { 
-  width: 30px; height: 30px; 
+  width: 36px; height: 36px; 
   border: none; border-radius: 50%; 
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.12);
   color: var(--text-2); 
-  font-size: 14px; 
+  font-size: 16px; 
+  font-weight: 700;
   cursor: pointer; 
   display: flex; 
   align-items: center; 
@@ -176,19 +177,19 @@ body {
 /* ─── Sibling Switcher ─── */
 .sibling-switcher { 
   display: flex; 
-  gap: 28px; 
+  gap: 22px; 
   -webkit-app-region: no-drag; 
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   z-index: 60; 
-  padding: 12px 40px;
+  padding: 10px 40px;
   background: rgba(255,255,255,0.05);
   backdrop-filter: blur(8px);
-  border-radius: 30px;
+  border-radius: 26px;
 }
 .sib-bubble { 
-  width: 44px; height: 44px; 
+  width: 37px; height: 37px; 
   border-radius: 50%; 
   border: 2px solid var(--border); 
   background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05));
@@ -202,8 +203,6 @@ body {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
   padding: 0; 
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-}
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .sib-bubble:hover { 
   transform: scale(1.12); 
@@ -219,12 +218,12 @@ body {
 }
 .sib-bubble:not(.active) { opacity: 0.6; }
 .sib-bubble:not(.active):hover { opacity: 0.9; }
-.sib-initial { font-size: 13px; font-weight: 700; pointer-events: none; }
-.sib-indicator { position: absolute; bottom: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent-2); border: 2px solid var(--bg-base); transition: all 0.2s ease; }
+.sib-initial { font-size: 12px; font-weight: 700; pointer-events: none; }
+.sib-indicator { position: absolute; bottom: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent-2); border: 2px solid var(--bg-base); transition: all 0.2s ease; }
 .sib-bubble.active .sib-indicator { background: #6DBF73; box-shadow: 0 0 8px rgba(109,191,115,0.5); }
 .sib-tooltip { 
   display: none; position: absolute; 
-  top: 42px; left: 50%; 
+  top: 38px; left: 50%; 
   transform: translateX(-50%) translateY(-4px);
   background: var(--card-bg-solid); 
   border: 1px solid var(--card-border); 
@@ -289,12 +288,6 @@ body {
 }
 .widgets-top {
   flex: 0 0 auto;
-}
-.widgets-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bento-gap);
-  flex: 1;
 }
 
 /* Enhanced Glassmorphism Cards */
@@ -599,77 +592,115 @@ body {
 #gif-results img { width: 100%; border-radius: var(--r-sm); cursor: pointer; transition: transform 0.15s ease; }
 #gif-results img:hover { transform: scale(1.04); }
 
-/* ─── Bottom Bento Row ─── */
-.bento-bottom { align-items: stretch; }
-
 .bento-memory {
-  flex: 1; min-width: 0;
   display: flex; flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  flex: 1; min-height: 0;
+  overflow-y: auto;
 }
-.bento-memory-stats {
-  display: flex; gap: 12px;
+/* Memory stat list (vertical numbered list) */
+.memory-stat-list {
+  display: flex; flex-direction: column;
+  gap: 4px; margin-top: 6px;
+}
+.memory-stat-row {
+  display: flex; align-items: baseline; gap: 8px;
   font-size: 11px; color: var(--text-2);
 }
-.bento-stat-num { font-weight: 700; color: var(--text-accent); font-size: 14px; }
-
-/* Memory/Personality Tabs - Pill buttons at bottom */
-.memory-tabs {
-  display: flex;
-  gap: 8px;
-  padding: 8px;
-  background: transparent;
-  border-radius: var(--r-pill);
-  border: none;
-  margin-top: 8px;
+.memory-stat-label {
+  text-transform: lowercase;
 }
-.memory-tab {
+.bento-stat-num { font-weight: 700; color: var(--text-accent); font-size: 14px; min-width: 20px; }
+
+/* ─── Bottom Pill Buttons ─── */
+.bottom-pills {
+  display: flex; gap: 8px;
+  flex-shrink: 0;
+  padding: 0;
+}
+.pill-wrapper {
   flex: 1;
-  padding: 12px 16px;
+  position: relative;
+}
+.pill-btn {
+  width: 100%;
+  padding: 10px 16px;
   border: 1px solid var(--card-border);
   background: var(--card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: var(--text-2);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   border-radius: var(--r-pill);
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: var(--font);
+  text-align: center;
 }
-.memory-tab:hover {
+.pill-btn:hover {
   color: var(--text-1);
   background: var(--card-bg-solid);
   border-color: var(--accent);
   transform: scale(1.02);
 }
-.memory-tab.active {
+.pill-btn.active {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
   box-shadow: 0 4px 12px rgba(199,95,113,0.3);
 }
 
-/* Personality Card */
-.bento-personality {
-  flex: 1; min-width: 0;
-  display: none; flex-direction: column;
-  justify-content: center;
-  /* Use sibling's own color palette */
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+/* Pill Dropdowns (pop up above the pills) */
+.pill-dropdown {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0; right: 0;
+  background: var(--card-bg-solid);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-shadow-hover);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 14px 16px;
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 50;
+  animation: pillSlideUp 0.2s ease;
 }
-.bento-personality .bento-card-label {
-  color: rgba(255,255,255,0.9);
+.pill-dropdown.open { display: block; }
+.pill-dropdown::-webkit-scrollbar { width: 4px; }
+.pill-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+@keyframes pillSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.bento-personality-stats {
-  display: flex; gap: 12px;
-  font-size: 11px; color: rgba(255,255,255,0.8);
+.pill-dropdown-header {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--text-accent);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
 }
-.bento-personality .bento-stat-num {
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
+.pill-dropdown-content {
+  display: flex; flex-direction: column;
+  gap: 2px;
+}
+.pill-dropdown-content .mem-item {
+  font-size: 11px; color: var(--text-2);
+  padding: 5px 8px;
+  border-left: 2px solid var(--border);
+  line-height: 1.5; word-wrap: break-word;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  transition: background 0.15s ease;
+}
+.pill-dropdown-content .mem-item:hover {
+  background: rgba(0,0,0,0.03);
+}
+.pill-dropdown-content .mem-item strong {
+  color: var(--text-accent); font-weight: 600;
 }
 
 /* Timeline in dropdown */
@@ -690,7 +721,6 @@ body {
 }
 
 .bento-time {
-  flex: 1;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center;
@@ -699,12 +729,12 @@ body {
 #date-display { font-size: 9px; color: var(--text-3); margin-top: 1px; }
 
 .bento-action {
-  flex: 1;
-  display: flex; flex-direction: column;
+  display: flex; flex-direction: row;
   align-items: center; justify-content: center;
   cursor: pointer; border: 1px solid var(--card-border);
   font-family: var(--font);
-  gap: 2px;
+  gap: 8px;
+  padding: 10px 16px;
   transition: all 0.2s ease;
 }
 .bento-action:hover { 
@@ -712,7 +742,7 @@ body {
   transform: scale(1.02);
 }
 .bento-action-icon { color: var(--accent); display: flex; align-items: center; justify-content: center; }
-.bento-action-text { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); }
+.bento-action-text { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); }
 #end-chat-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 #end-chat-btn.ended { background: var(--accent-2); }
 #end-chat-btn.ended .bento-action-icon { color: #fff; }
@@ -810,18 +840,20 @@ body {
 .settings-save-btn:hover { filter: brightness(1.1); transform: scale(1.03); }
 .settings-status { font-size: 11px; color: var(--text-3); font-style: italic; }
 
-/* ─── Reset Buttons ─── */
-.reset-group { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+/* ─── Reset & Sprite Buttons ─── */
+.reset-group { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .reset-group:last-of-type { border-bottom: none; }
 .reset-label { font-size: 12px; font-weight: 700; color: var(--text-1); width: 50px; flex-shrink: 0; }
 .reset-buttons { display: flex; gap: 4px; flex-wrap: wrap; }
 .reset-btn { padding: 5px 12px; border-radius: var(--r-pill); font-family: var(--font); font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
-.reset-btn.memory-wipe { background: transparent; border: 1px solid var(--accent-2); color: var(--accent-2); }
-.reset-btn.memory-wipe:hover { background: var(--accent-2); color: #fff; }
-.reset-btn.personality-reset { background: transparent; border: 1px solid var(--text-accent); color: var(--text-accent); }
-.reset-btn.personality-reset:hover { background: var(--text-accent); color: #fff; }
-.reset-btn.full-reset { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+.reset-btn.memory-wipe { background: transparent; border: 1.5px solid var(--border); color: var(--text-2); }
+.reset-btn.memory-wipe:hover { background: var(--accent-2); color: #fff; border-color: var(--accent-2); }
+.reset-btn.personality-reset { background: transparent; border: 1.5px solid var(--border); color: var(--text-2); }
+.reset-btn.personality-reset:hover { background: var(--text-accent); color: #fff; border-color: var(--text-accent); }
+.reset-btn.full-reset { background: transparent; border: 1.5px solid var(--accent); color: var(--accent); }
 .reset-btn.full-reset:hover { background: var(--accent); color: #fff; }
+.reset-btn.sprite-switch { background: transparent; border: 1.5px solid var(--border); color: var(--text-2); }
+.reset-btn.sprite-switch:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 /* ─── Nudge Flash ─── */
 @keyframes nudgeFlash {

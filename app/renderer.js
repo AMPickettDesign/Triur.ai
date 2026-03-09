@@ -356,102 +356,146 @@ async function refreshStatus() {
     const miniConvos = $('mem-convos-mini');
     if (miniConvos) miniConvos.textContent = `${convCount} convos`;
   }
-  // Get fact count from memory endpoint
+  // Get fact count from memory endpoint and populate mini-list
   const mem = await apiGet('/api/memory');
   if (mem && memFacts) memFacts.textContent = mem.fact_count || 0;
+  populateMemoryMiniList();
 }
 
-// ─── Memory/Personality Tabs ───
-let currentMemoryTab = 'user';
+// ─── Bottom Pill Dropdowns ───
+let activePill = null;
 
-async function refreshPersonality() {
+function togglePillDropdown(pillName) {
+  const allDropdowns = document.querySelectorAll('.pill-dropdown');
+  const allBtns = document.querySelectorAll('.pill-btn');
+  const dropdown = $(`dropdown-${pillName}`);
+  const btn = document.querySelector(`.pill-btn[data-pill="${pillName}"]`);
+
+  if (activePill === pillName) {
+    // Close current
+    if (dropdown) dropdown.classList.remove('open');
+    if (btn) btn.classList.remove('active');
+    activePill = null;
+    return;
+  }
+
+  // Close all others
+  allDropdowns.forEach(d => d.classList.remove('open'));
+  allBtns.forEach(b => b.classList.remove('active'));
+
+  // Open this one
+  if (dropdown) dropdown.classList.add('open');
+  if (btn) btn.classList.add('active');
+  activePill = pillName;
+
+  // Populate content
+  if (pillName === 'opinions') populatePillOpinions();
+  else if (pillName === 'behaviors') populatePillBehaviors();
+  else if (pillName === 'timeline') populatePillTimeline();
+}
+
+async function populatePillOpinions() {
   const p = await apiGet('/api/personality');
   if (!p) return;
-  
-  const opinionsCount = Object.keys(p.my_opinions || {}).length;
-  const behaviorsCount = (p.my_patterns || []).length;
-  
-  const personaOpinions = $('persona-opinions');
-  const personaBehaviors = $('persona-behaviors');
-  if (personaOpinions) personaOpinions.textContent = opinionsCount;
-  if (personaBehaviors) personaBehaviors.textContent = behaviorsCount;
-  
-  // Populate personality dropdown
-  const opinionsList = $('persona-opinions-list');
-  if (opinionsList) {
-    opinionsList.innerHTML = '';
-    for (const [topic, data] of Object.entries(p.my_opinions || {})) {
-      const item = document.createElement('div');
-      item.className = 'mem-item';
-      item.innerHTML = `<strong>${topic}:</strong> ${data.opinion}`;
-      opinionsList.appendChild(item);
-    }
-    if (Object.keys(p.my_opinions || {}).length === 0) {
-      opinionsList.innerHTML = '<div class="mem-item">Getting to know myself...</div>';
-    }
+  const list = $('pill-opinions-list');
+  if (!list) return;
+  list.innerHTML = '';
+  const entries = Object.entries(p.my_opinions || {});
+  if (entries.length === 0) {
+    list.innerHTML = '<div class="mem-item">Getting to know myself...</div>';
+    return;
   }
-  
-  const behaviorsList = $('persona-behaviors-list');
-  if (behaviorsList) {
-    behaviorsList.innerHTML = '';
-    for (const behavior of (p.my_patterns || []).slice(0, 10)) {
-      const item = document.createElement('div');
-      item.className = 'mem-item';
-      item.textContent = `${behavior.description} (${behavior.times_observed}x)`;
-      behaviorsList.appendChild(item);
-    }
-    if ((p.my_patterns || []).length === 0) {
-      behaviorsList.innerHTML = '<div class="mem-item">Still figuring out how I roll...</div>';
-    }
-  }
-  
-  const timelineList = $('persona-timeline-list');
-  if (timelineList) {
-    timelineList.innerHTML = '';
-    for (const event of (p.timeline || []).slice(0, 10)) {
-      const item = document.createElement('div');
-      item.className = 'timeline-event';
-      item.innerHTML = `<div class="timeline-date">${event.date}</div><div class="timeline-desc">${event.description}</div>`;
-      timelineList.appendChild(item);
-    }
-    if ((p.timeline || []).length === 0) {
-      timelineList.innerHTML = '<div class="mem-item">No significant moments yet...</div>';
-    }
+  for (const [topic, data] of entries) {
+    const item = document.createElement('div');
+    item.className = 'mem-item';
+    item.innerHTML = `<strong>${topic}:</strong> ${data.opinion || data}`;
+    list.appendChild(item);
   }
 }
 
-function switchMemoryTab(tab) {
-  currentMemoryTab = tab;
-  const memoryCard = $('widget-memory');
-  const personalityCard = $('widget-personality');
-  const memoryDropdown = $('memory-dropdown');
-  const personalityDropdown = $('personality-dropdown');
-  const memoryTabs = document.querySelectorAll('.memory-tab');
-  
-  memoryTabs.forEach(t => {
-    t.classList.toggle('active', t.dataset.tab === tab);
-  });
-  
-  if (tab === 'user') {
-    if (memoryCard) memoryCard.style.display = 'flex';
-    if (personalityCard) personalityCard.style.display = 'none';
-    if (memoryDropdown) memoryDropdown.style.display = 'block';
-    if (personalityDropdown) personalityDropdown.style.display = 'none';
-  } else {
-    if (memoryCard) memoryCard.style.display = 'none';
-    if (personalityCard) personalityCard.style.display = 'flex';
-    if (memoryDropdown) memoryDropdown.style.display = 'none';
-    if (personalityDropdown) personalityDropdown.style.display = 'block';
-    refreshPersonality();
+async function populatePillBehaviors() {
+  const p = await apiGet('/api/personality');
+  if (!p) return;
+  const list = $('pill-behaviors-list');
+  if (!list) return;
+  list.innerHTML = '';
+  const patterns = p.my_patterns || [];
+  if (patterns.length === 0) {
+    list.innerHTML = '<div class="mem-item">Still figuring out how I roll...</div>';
+    return;
+  }
+  for (const behavior of patterns.slice(0, 15)) {
+    const item = document.createElement('div');
+    item.className = 'mem-item';
+    item.textContent = `${behavior.description} (${behavior.times_observed}x)`;
+    list.appendChild(item);
   }
 }
 
-// Setup tab click handlers
+async function populatePillTimeline() {
+  const p = await apiGet('/api/personality');
+  if (!p) return;
+  const list = $('pill-timeline-list');
+  if (!list) return;
+  list.innerHTML = '';
+  const events = p.timeline || [];
+  if (events.length === 0) {
+    list.innerHTML = '<div class="mem-item">No significant moments yet...</div>';
+    return;
+  }
+  for (const event of events.slice(0, 15)) {
+    const item = document.createElement('div');
+    item.className = 'timeline-event';
+    item.innerHTML = `<div class="timeline-date">${event.date}</div><div class="timeline-desc">${event.description}</div>`;
+    list.appendChild(item);
+  }
+}
+
+// Setup pill button click handlers
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.memory-tab').forEach(tab => {
-    tab.addEventListener('click', () => switchMemoryTab(tab.dataset.tab));
+  document.querySelectorAll('.pill-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePillDropdown(btn.dataset.pill);
+    });
+  });
+  // Close pills when clicking outside
+  document.addEventListener('click', (e) => {
+    if (activePill && !e.target.closest('.pill-wrapper')) {
+      const allDropdowns = document.querySelectorAll('.pill-dropdown');
+      const allBtns = document.querySelectorAll('.pill-btn');
+      allDropdowns.forEach(d => d.classList.remove('open'));
+      allBtns.forEach(b => b.classList.remove('active'));
+      activePill = null;
+    }
   });
 });
+
+// ─── Memory Card Stats ───
+async function populateMemoryMiniList() {
+  const mem = await apiGet('/api/memory');
+  if (!mem) return;
+
+  const facts = mem.facts || {};
+  const opinions = mem.opinions || {};
+
+  // Count likes and dislikes from opinions
+  let likeCount = 0, dislikeCount = 0;
+  Object.entries(opinions).forEach(([topic, data]) => {
+    const sentiment = typeof data === 'object' ? (data.sentiment || data.opinion || '') : String(data);
+    const sentLower = sentiment.toLowerCase();
+    if (sentLower.includes('dislike') || sentLower.includes('hate') || sentLower.includes('don\'t like') || sentLower.includes('negative')) {
+      dislikeCount++;
+    } else {
+      likeCount++;
+    }
+  });
+
+  const memLikes = $('mem-likes');
+  const memDislikes = $('mem-dislikes');
+  if (memLikes) memLikes.textContent = likeCount;
+  if (memDislikes) memDislikes.textContent = dislikeCount;
+}
 
 // ─── Sibling Switching ───
 function applyTheme(siblingId) {
@@ -750,7 +794,7 @@ $('settings-save').addEventListener('click', async () => {
 });
 
 // ─── Reset Buttons ───
-document.querySelectorAll('.reset-btn').forEach(btn => {
+document.querySelectorAll('.reset-btn:not(.sprite-switch)').forEach(btn => {
   btn.addEventListener('click', async () => {
     const sid = btn.dataset.sibling;
     const type = btn.dataset.type;
@@ -769,6 +813,33 @@ document.querySelectorAll('.reset-btn').forEach(btn => {
     } else {
       status.textContent = 'Reset failed.';
     }
+    setTimeout(() => { status.textContent = ''; }, 4000);
+  });
+});
+
+// ─── Sprite Switch Buttons ───
+document.querySelectorAll('.sprite-switch').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const sid = btn.dataset.sibling;
+    const options = SPRITE_ASSIGNMENTS[sid];
+    if (!options || options.length < 2) return;
+
+    // Toggle to the other sprite option
+    const current = spriteAssignments[sid];
+    const other = options.find(o => o !== current) || options[0];
+    spriteAssignments[sid] = other;
+
+    // Save to profile
+    await apiPost('/api/profile', { sprite_assignments: spriteAssignments });
+
+    // If this is the active sibling, reload the sprite immediately
+    if (sid === activeSibling) {
+      await loadSpriteCharacter(other);
+      startSpriteLoop();
+    }
+
+    const status = $('reset-status');
+    status.textContent = `${NAME_MAP[sid]}: Sprite changed to ${other}.`;
     setTimeout(() => { status.textContent = ''; }, 4000);
   });
 });
@@ -793,71 +864,10 @@ async function endChat() {
   inputEl.placeholder = 'Session ended. Switch siblings or restart to chat again.';
   addSystemMessage(r && r.reflection ? `Session saved. ${NAME_MAP[activeSibling]} wrote a reflection.` : 'Session saved.');
   await refreshStatus();
-  await loadMemoryData();
+  await populateMemoryMiniList();
   titlebarStatus.textContent = 'session ended';
 }
 endChatBtn.addEventListener('click', endChat);
-
-// ─── Memory Dropdown ───
-const memToggle = $('memory-toggle-btn'), memDropdown = $('memory-dropdown');
-memToggle.addEventListener('click', async () => {
-  const open = memDropdown.classList.toggle('open');
-  memToggle.innerHTML = open ? 'View Memories &#9652;' : 'View Memories &#9662;';
-  if (open) await loadMemoryData();
-});
-document.querySelectorAll('.mem-section-header').forEach(h => {
-  h.addEventListener('click', () => {
-    const content = $(`mem-${h.dataset.section}-list`);
-    const open = content.classList.toggle('open');
-    h.classList.toggle('expanded', open);
-    h.innerHTML = h.innerHTML.replace(/[\u25B8\u25BE]/, open ? '\u25BE' : '\u25B8');
-  });
-});
-
-async function loadMemoryData() {
-  const mem = await apiGet('/api/memory');
-  if (!mem) return;
-
-  const factsList = $('mem-facts-list');
-  if (!factsList) return;
-  factsList.innerHTML = '';
-  let hasFacts = false;
-  if (mem.facts) {
-    Object.entries(mem.facts).forEach(([cat, items]) => {
-      if (items && typeof items === 'object') {
-        Object.entries(items).forEach(([key, val]) => {
-          hasFacts = true;
-          const d = document.createElement('div'); d.className = 'mem-item';
-          d.innerHTML = `<span class="mem-key">${key}:</span> ${val.value || val}`;
-          factsList.appendChild(d);
-        });
-      }
-    });
-  }
-  if (!hasFacts) factsList.innerHTML = '<div class="mem-empty">No facts stored yet.</div>';
-
-  const opList = $('mem-opinions-list');
-  if (opList) {
-    opList.innerHTML = '';
-    if (mem.opinions && Object.keys(mem.opinions).length) {
-      Object.entries(mem.opinions).forEach(([topic, data]) => {
-        const d = document.createElement('div'); d.className = 'mem-item';
-        d.innerHTML = `<span class="mem-key">${topic}:</span> ${typeof data === 'object' && data.opinion ? data.opinion : data}`;
-        opList.appendChild(d);
-      });
-    } else opList.innerHTML = '<div class="mem-empty">No opinions formed yet.</div>';
-  }
-}
-
-// ─── Personality Dropdown ───
-const persToggle = $('personality-toggle-btn'), persDropdown = $('personality-dropdown');
-if (persToggle && persDropdown) {
-  persToggle.addEventListener('click', async () => {
-    const open = persDropdown.classList.toggle('open');
-    persToggle.innerHTML = open ? 'View Personality &#9652;' : 'View Personality &#9662;';
-    if (open) await refreshPersonality();
-  });
-}
 
 // ─── Onboarding (First Run) ───
 const onboardingOverlay = $('onboarding-overlay');

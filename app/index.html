@@ -50,7 +50,6 @@
       
       <!-- Left Column: Chat Area -->
       <div class="chat-column">
-        <!-- Chat Well -->
         <div id="chat-area">
           <div id="messages" role="log" aria-live="polite"></div>
 
@@ -64,35 +63,12 @@
             <div id="gif-results"></div>
           </div>
         </div>
-
-        <!-- Input Row -->
-        <div id="input-area">
-          <button id="action-mode-btn" title="Toggle Action Mode — let the AI control your PC">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="3" width="20" height="18" rx="3"/>
-              <path d="M7 9l3 3-3 3M13 15h4"/>
-            </svg>
-          </button>
-          <textarea id="message-input" placeholder="Talk to Abi..." rows="1" autofocus></textarea>
-          <button id="gif-btn" title="Send a GIF">GIF</button>
-          <button id="send-btn" title="Send">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Memory/Personality Tab Toggle (bottom pill buttons) -->
-        <div class="memory-tabs" id="memory-tabs">
-          <button class="memory-tab active" data-tab="user">Memories About You</button>
-          <button class="memory-tab" data-tab="self">My Personality</button>
-        </div>
       </div>
 
       <!-- Right Column: Widgets -->
       <div class="widgets-column">
         
-        <!-- Top Widgets Row: Mood + Feelings -->
+        <!-- Top Row: Mood + Feelings side-by-side -->
         <div class="widgets-row widgets-top">
           <div class="bento-card bento-mood" id="widget-mood">
             <span id="mood-bar-emoji" class="bento-mood-emoji">&#9673;</span>
@@ -112,43 +88,84 @@
               <div class="rel-meter"><span class="rel-label">Comfort</span><div class="bar-track"><div class="bar-fill rel-comfort" style="width:30%"></div></div></div>
               <div class="rel-meter"><span class="rel-label">Curiosity</span><div class="bar-track"><div class="bar-fill rel-curiosity" style="width:50%"></div></div></div>
             </div>
-            </div>
           </div>
-
-          <!-- Bottom Widgets Row: Memory + Time -->
-          <div class="widgets-row widgets-bottom">
-          <!-- User Memory View (default) -->
-          <div class="bento-card bento-memory" id="widget-memory">
-            <div class="bento-card-label">Memory</div>
-            <div class="bento-memory-stats">
-              <span><span id="mem-convos" class="bento-stat-num">0</span> convos</span>
-              <span><span id="mem-facts" class="bento-stat-num">0</span> facts</span>
-            </div>
-          </div>
-          <!-- Self Personality View (hidden by default) -->
-          <div class="bento-card bento-personality" id="widget-personality" style="display:none;">
-            <div class="bento-card-label">My Personality</div>
-            <div class="bento-personality-stats">
-              <span><span id="persona-opinions" class="bento-stat-num">0</span> opinions</span>
-              <span><span id="persona-behaviors" class="bento-stat-num">0</span> behaviors</span>
-            </div>
-          </div>
-          <!-- Time Card -->
-          <div class="bento-card bento-time" id="widget-time">
-            <div id="time-display">--:--</div>
-            <div id="date-display">...</div>
-          </div>
-          <!-- End Chat Button -->
-          <button class="bento-card bento-action" id="end-chat-btn" title="End conversation and save">
-            <span class="bento-action-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 11.94 11.94 0 0 0 3.75.6 2 2 0 0 1 2 2v3.39a2 2 0 0 1-2.22 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6A19.79 19.79 0 0 1 3.27 4.22 2 2 0 0 1 5.2 2h3.4a2 2 0 0 1 2 1.72 12.07 12.07 0 0 0 .6 3.75 2 2 0 0 1-.45 2.11z"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
-            </span>
-            <span class="bento-action-text">End</span>
-          </button>
         </div>
+
+        <!-- Memory Card (full width, vertical stat list) -->
+        <div class="bento-card bento-memory" id="widget-memory">
+          <div class="bento-card-label">Memory</div>
+          <div class="memory-stat-list">
+            <div class="memory-stat-row"><span id="mem-convos" class="bento-stat-num">0</span><span class="memory-stat-label">convos</span></div>
+            <div class="memory-stat-row"><span id="mem-facts" class="bento-stat-num">0</span><span class="memory-stat-label">facts</span></div>
+            <div class="memory-stat-row"><span id="mem-likes" class="bento-stat-num">0</span><span class="memory-stat-label">likes</span></div>
+            <div class="memory-stat-row"><span id="mem-dislikes" class="bento-stat-num">0</span><span class="memory-stat-label">dislikes</span></div>
+          </div>
+        </div>
+
+        <!-- Time Card (full width) -->
+        <div class="bento-card bento-time" id="widget-time">
+          <div id="time-display">--:--</div>
+          <div id="date-display">...</div>
+        </div>
+
+        <!-- End Chat Button (full width) -->
+        <button class="bento-card bento-action" id="end-chat-btn" title="End conversation and save">
+          <span class="bento-action-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 11.94 11.94 0 0 0 3.75.6 2 2 0 0 1 2 2v3.39a2 2 0 0 1-2.22 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6A19.79 19.79 0 0 1 3.27 4.22 2 2 0 0 1 5.2 2h3.4a2 2 0 0 1 2 1.72 12.07 12.07 0 0 0 .6 3.75 2 2 0 0 1-.45 2.11z"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </span>
+          <span class="bento-action-text">End Call</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Input Row (full width, below both columns) -->
+    <div id="input-area">
+      <button id="action-mode-btn" title="Toggle Action Mode — let the AI control your PC">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="18" rx="3"/>
+          <path d="M7 9l3 3-3 3M13 15h4"/>
+        </svg>
+      </button>
+      <textarea id="message-input" placeholder="Talk to Abi..." rows="1" autofocus></textarea>
+      <button id="gif-btn" title="Send a GIF">GIF</button>
+      <button id="send-btn" title="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Bottom Pill Buttons (full width, with pop-up dropdowns) -->
+    <div class="bottom-pills" id="bottom-pills">
+      <div class="pill-wrapper">
+        <div class="pill-dropdown" id="dropdown-opinions">
+          <div class="pill-dropdown-header">My Opinions</div>
+          <div class="pill-dropdown-content" id="pill-opinions-list">
+            <div class="mem-item">Getting to know myself...</div>
+          </div>
+        </div>
+        <button class="pill-btn" data-pill="opinions">My Opinions &#9662;</button>
+      </div>
+      <div class="pill-wrapper">
+        <div class="pill-dropdown" id="dropdown-behaviors">
+          <div class="pill-dropdown-header">How I Roll</div>
+          <div class="pill-dropdown-content" id="pill-behaviors-list">
+            <div class="mem-item">Still figuring out how I roll...</div>
+          </div>
+        </div>
+        <button class="pill-btn" data-pill="behaviors">How I Roll &#9662;</button>
+      </div>
+      <div class="pill-wrapper">
+        <div class="pill-dropdown" id="dropdown-timeline">
+          <div class="pill-dropdown-header">Growth Timeline</div>
+          <div class="pill-dropdown-content" id="pill-timeline-list">
+            <div class="mem-item">No significant moments yet...</div>
+          </div>
+        </div>
+        <button class="pill-btn" data-pill="timeline">Growth Timeline &#9662;</button>
       </div>
     </div>
 
@@ -159,32 +176,13 @@
     <span id="rel-opinion-mini" style="display:none">...</span>
     <span id="mem-convos-mini" style="display:none">0</span>
     <span id="time-mini" style="display:none">--:--</span>
-    <div id="memory-dropdown" class="memory-dropdown" style="display:none">
-      <div class="mem-section">
-        <div class="mem-section-header" data-section="facts">Facts &#9656;</div>
-        <div class="mem-section-content" id="mem-facts-list"></div>
-      </div>
-      <div class="mem-section">
-        <div class="mem-section-header" data-section="opinions">Opinions &#9656;</div>
-        <div class="mem-section-content" id="mem-opinions-list"></div>
-      </div>
-    </div>
-    <div id="personality-dropdown" class="memory-dropdown" style="display:none">
-      <div class="mem-section">
-        <div class="mem-section-header" data-section="my-opinions">My Opinions &#9656;</div>
-        <div class="mem-section-content" id="persona-opinions-list"></div>
-      </div>
-      <div class="mem-section">
-        <div class="mem-section-header" data-section="my-behaviors">How I Roll &#9656;</div>
-        <div class="mem-section-content" id="persona-behaviors-list"></div>
-      </div>
-      <div class="mem-section">
-        <div class="mem-section-header" data-section="timeline">Growth Timeline &#9656;</div>
-        <div class="mem-section-content" id="persona-timeline-list"></div>
-      </div>
-    </div>
+    <!-- Legacy hidden elements for backward compat -->
+    <div id="memory-dropdown" style="display:none"></div>
+    <div id="personality-dropdown" style="display:none"></div>
     <button id="memory-toggle-btn" style="display:none">View</button>
     <button id="personality-toggle-btn" style="display:none">View</button>
+    <span id="persona-opinions" style="display:none">0</span>
+    <span id="persona-behaviors" style="display:none">0</span>
   </div>
 
     <!-- Onboarding Overlay (first run only) -->
@@ -573,6 +571,7 @@
               <button class="reset-btn memory-wipe" data-type="memory" data-sibling="abi">Wipe Memory</button>
               <button class="reset-btn personality-reset" data-type="personality" data-sibling="abi">Reset Personality</button>
               <button class="reset-btn full-reset" data-type="full" data-sibling="abi">Full Reset</button>
+              <button class="reset-btn sprite-switch" data-sibling="abi">Change Sprite</button>
             </div>
           </div>
           <div class="reset-group" data-sibling="david">
@@ -581,6 +580,7 @@
               <button class="reset-btn memory-wipe" data-type="memory" data-sibling="david">Wipe Memory</button>
               <button class="reset-btn personality-reset" data-type="personality" data-sibling="david">Reset Personality</button>
               <button class="reset-btn full-reset" data-type="full" data-sibling="david">Full Reset</button>
+              <button class="reset-btn sprite-switch" data-sibling="david">Change Sprite</button>
             </div>
           </div>
           <div class="reset-group" data-sibling="quinn">
@@ -589,6 +589,7 @@
               <button class="reset-btn memory-wipe" data-type="memory" data-sibling="quinn">Wipe Memory</button>
               <button class="reset-btn personality-reset" data-type="personality" data-sibling="quinn">Reset Personality</button>
               <button class="reset-btn full-reset" data-type="full" data-sibling="quinn">Full Reset</button>
+              <button class="reset-btn sprite-switch" data-sibling="quinn">Change Sprite</button>
             </div>
           </div>
           <span id="reset-status" class="settings-status"></span>

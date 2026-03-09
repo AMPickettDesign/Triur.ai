@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Triur.ai — Starting</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, #1C1C22 0%, #222228 40%, #1E1E24 80%, #1A1A1F 100%);
+      color: #E0E0E0;
+      height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px;
+      -webkit-app-region: drag;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .logo {
+      font-size: 28px; font-weight: 700;
+      background: linear-gradient(135deg, #C75F71, #A2AE9D);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 11px; color: #6A6A6A;
+      margin-bottom: 32px;
+      font-style: italic;
+    }
+
+    .status-area {
+      width: 100%;
+      max-width: 360px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 16px;
+    }
+
+    #status-text {
+      font-size: 12px; color: #989898;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    .progress-track {
+      width: 100%; height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #C75F71, #A2AE9D);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .progress-fill.indeterminate {
+      width: 30%;
+      animation: indeterminate 1.5s ease infinite;
+    }
+    @keyframes indeterminate {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(400%); }
+    }
+
+    .prompt-area {
+      display: none;
+      flex-direction: column;
+      align-items: center; gap: 12px;
+      text-align: center;
+    }
+    .prompt-area.show { display: flex; }
+
+    .prompt-text {
+      font-size: 12px; color: #E0E0E0;
+      line-height: 1.5;
+    }
+    .prompt-detail {
+      font-size: 10px; color: #6A6A6A;
+    }
+
+    .prompt-buttons {
+      display: flex; gap: 10px;
+      -webkit-app-region: no-drag;
+    }
+    .btn {
+      padding: 8px 24px;
+      border: none; border-radius: 999px;
+      font-family: inherit;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: #C75F71; color: #fff;
+    }
+    .btn-primary:hover { filter: brightness(1.15); transform: scale(1.03); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: #989898;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-secondary:hover { color: #E0E0E0; border-color: rgba(255,255,255,0.2); }
+
+    .step-dots {
+      display: flex; gap: 6px;
+      margin-top: 8px;
+    }
+    .step-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      transition: all 0.3s ease;
+    }
+    .step-dot.active {
+      background: #C75F71;
+      width: 18px; border-radius: 3px;
+    }
+    .step-dot.done { background: #A2AE9D; }
+  </style>
+</head>
+<body>
+  <div class="logo">Triur.ai</div>
+  <div class="subtitle">Your personal AI companion</div>
+
+  <div class="status-area">
+    <div id="status-text">Checking setup...</div>
+    <div class="progress-track">
+      <div class="progress-fill indeterminate" id="progress-fill"></div>
+    </div>
+
+    <div class="prompt-area" id="prompt-area">
+      <div class="prompt-text" id="prompt-text"></div>
+      <div class="prompt-detail" id="prompt-detail"></div>
+      <div class="prompt-buttons" id="prompt-buttons"></div>
+    </div>
+
+    <div class="step-dots">
+      <div class="step-dot" id="dot-ollama"></div>
+      <div class="step-dot" id="dot-model"></div>
+      <div class="step-dot" id="dot-server"></div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    const statusEl = document.getElementById('status-text');
+    const progressEl = document.getElementById('progress-fill');
+    const promptArea = document.getElementById('prompt-area');
+    const promptText = document.getElementById('prompt-text');
+    const promptDetail = document.getElementById('prompt-detail');
+    const promptButtons = document.getElementById('prompt-buttons');
+
+    function setStatus(text) { statusEl.textContent = text; }
+    function setProgress(pct) {
+      progressEl.classList.remove('indeterminate');
+      progressEl.style.width = pct + '%';
+    }
+    function setIndeterminate() {
+      progressEl.classList.add('indeterminate');
+      progressEl.style.width = '30%';
+    }
+    function setDot(id, state) {
+      const dot = document.getElementById(id);
+      dot.className = 'step-dot' + (state === 'active' ? ' active' : state === 'done' ? ' done' : '');
+    }
+
+    function showPrompt(text, detail, buttons) {
+      promptText.textContent = text;
+      promptDetail.textContent = detail || '';
+      promptButtons.innerHTML = '';
+      buttons.forEach(b => {
+        const btn = document.createElement('button');
+        btn.className = 'btn ' + (b.primary ? 'btn-primary' : 'btn-secondary');
+        btn.textContent = b.label;
+        btn.addEventListener('click', b.onClick);
+        promptButtons.appendChild(btn);
+      });
+      promptArea.classList.add('show');
+    }
+
+    function hidePrompt() { promptArea.classList.remove('show'); }
+
+    // Listen for status updates from main process
+    ipcRenderer.on('setup-status', (event, text) => setStatus(text));
+    ipcRenderer.on('pull-progress', (event, data) => {
+      if (data.percent >= 0) {
+        setProgress(data.percent);
+        setStatus(data.status || `Downloading AI brain... ${data.percent}%`);
+      } else {
+        setStatus(data.status || 'Preparing...');
+      }
+    });
+
+    // ─── Setup Flow ───
+    async function runSetup() {
+      setStatus('Checking setup...');
+      setDot('dot-ollama', 'active');
+
+      const state = await ipcRenderer.invoke('get-setup-state');
+
+      // Step 1: Ollama installed?
+      if (!state.ollamaInstalled) {
+        showPrompt(
+          'Triur.ai needs Ollama to run the AI brain.',
+          'Ollama is a free, local AI runner. It will be installed automatically.',
+          [
+            { label: 'Install Ollama', primary: true, onClick: async () => {
+              hidePrompt();
+              setStatus('Downloading Ollama...');
+              const result = await ipcRenderer.invoke('install-ollama');
+              if (result.success) {
+                state.ollamaInstalled = true;
+                state.ollamaPath = result.path;
+                setDot('dot-ollama', 'done');
+                await continueSetup(state);
+              } else {
+                showPrompt(
+                  'Failed to install Ollama.',
+                  result.error || 'Please install Ollama manually from ollama.com',
+                  [{ label: 'Retry', primary: true, onClick: () => runSetup() },
+                   { label: 'Quit', primary: false, onClick: () => window.close() }]
+                );
+              }
+            }},
+            { label: 'Quit', primary: false, onClick: () => window.close() }
+          ]
+        );
+        return;
+      }
+
+      setDot('dot-ollama', 'done');
+      await continueSetup(state);
+    }
+
+    async function continueSetup(state) {
+      // Step 2: Ollama running?
+      if (!state.ollamaRunning) {
+        setStatus('Starting Ollama...');
+        const result = await ipcRenderer.invoke('start-ollama', state.ollamaPath);
+        if (!result.success) {
+          showPrompt(
+            'Could not start Ollama.',
+            'Try restarting Triur.ai or starting Ollama manually.',
+            [{ label: 'Retry', primary: true, onClick: () => runSetup() },
+             { label: 'Quit', primary: false, onClick: () => window.close() }]
+          );
+          return;
+        }
+        state.ollamaRunning = true;
+      }
+
+      setDot('dot-ollama', 'done');
+      setDot('dot-model', 'active');
+
+      // Step 3: Model pulled?
+      if (!state.modelReady) {
+        // Re-check in case it was just slow
+        const recheck = await ipcRenderer.invoke('get-setup-state');
+        if (recheck.modelReady) {
+          state.modelReady = true;
+        }
+      }
+
+      if (!state.modelReady) {
+        showPrompt(
+          'Triur.ai needs to download the AI brain.',
+          'This is a one-time download of about 4.7 GB. It may take a few minutes depending on your internet speed.',
+          [
+            { label: 'Download Now', primary: true, onClick: async () => {
+              hidePrompt();
+              setStatus('Downloading AI brain...');
+              setProgress(0);
+              const result = await ipcRenderer.invoke('pull-model', state.ollamaPath);
+              if (result.success) {
+                setProgress(100);
+                setDot('dot-model', 'done');
+                await finishSetup();
+              } else {
+                showPrompt(
+                  'Model download failed.',
+                  result.error || 'Check your internet connection and try again.',
+                  [{ label: 'Retry', primary: true, onClick: () => continueSetup(state) },
+                   { label: 'Quit', primary: false, onClick: () => window.close() }]
+                );
+              }
+            }},
+            { label: 'Quit', primary: false, onClick: () => window.close() }
+          ]
+        );
+        return;
+      }
+
+      setDot('dot-model', 'done');
+      await finishSetup();
+    }
+
+    async function finishSetup() {
+      setDot('dot-model', 'done');
+      setDot('dot-server', 'active');
+      setStatus('Starting brain server...');
+      setIndeterminate();
+
+      const result = await ipcRenderer.invoke('setup-complete');
+
+      if (result.success) {
+        setDot('dot-server', 'done');
+        setStatus('Ready!');
+        setProgress(100);
+        // Main window will open and this splash closes automatically
+      } else {
+        showPrompt(
+          'Could not start the brain server.',
+          'The Python backend failed to respond.',
+          [{ label: 'Retry', primary: true, onClick: () => finishSetup() },
+           { label: 'Quit', primary: false, onClick: () => window.close() }]
+        );
+      }
+    }
+
+    // Start the setup flow
+    runSetup();
+  </script>
+</body>
+</html>

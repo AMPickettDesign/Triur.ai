@@ -938,7 +938,6 @@ const SPRITE_SIZE = 128;
 let pokeTimes = [];             // Timestamps of recent pokes
 let isDragging = false;
 let dragOffsetX = 0;
-let dragOffsetY = 0;
 
 function initSpriteAssignments(profile) {
   if (profile && profile.sprite_assignments) {
@@ -1091,9 +1090,7 @@ function initSpriteInteractions() {
 
     // Start drag tracking
     isDragging = false;
-    const rect = spriteCanvas.getBoundingClientRect();
-    dragOffsetX = e.clientX - rect.left;
-    dragOffsetY = e.clientY - rect.top;
+    dragOffsetX = e.clientX - spriteCanvas.getBoundingClientRect().left;
 
     const onMove = (me) => {
       if (!isDragging) {
@@ -1106,15 +1103,10 @@ function initSpriteInteractions() {
         }
         return;
       }
-      // Move sprite to mouse position (anywhere in window)
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
-      let newLeft = me.clientX - dragOffsetX;
-      let newTop = me.clientY - dragOffsetY;
-      
-      // Clamp to window bounds
-      newLeft = Math.max(0, Math.min(newLeft, windowWidth - 100));
-      newTop = Math.max(0, Math.min(newTop, windowHeight - 100));
+      // Move sprite horizontally within the sprite area
+      const areaRect = area.getBoundingClientRect();
+      let newLeft = me.clientX - areaRect.left - dragOffsetX;
+      newLeft = Math.max(0, Math.min(newLeft, areaRect.width - 120));
 
       // Flip based on movement direction
       const currentLeft = spriteCanvas.offsetLeft;
@@ -1124,8 +1116,6 @@ function initSpriteInteractions() {
         spriteCanvas.style.transform = 'scaleX(-1)';
       }
       spriteCanvas.style.left = `${newLeft}px`;
-      spriteCanvas.style.bottom = 'auto';
-      spriteCanvas.style.top = `${newTop}px`;
     };
 
     const onUp = () => {
@@ -1134,15 +1124,13 @@ function initSpriteInteractions() {
       spriteCanvas.style.cursor = 'grab';
 
       if (isDragging) {
-        // Was dragging — drop them back to bottom center
+        // Was dragging — drop them back to center
         isDragging = false;
         spriteLocked = true;
         
-        // Animate falling back to bottom center
-        spriteCanvas.style.transition = 'left 0.4s ease-out, top 0.4s ease-out, transform 0.3s ease';
-        spriteCanvas.style.left = 'calc(50% - 50px)';
-        spriteCanvas.style.top = 'auto';
-        spriteCanvas.style.bottom = '10px';
+        // Animate falling back to center
+        spriteCanvas.style.transition = 'left 0.4s ease-out, transform 0.3s ease';
+        spriteCanvas.style.left = 'calc(50% - 60px)';
         
         // Play Jump/fall animation during return, then Idle
         setSpriteAnimation('Jump', true);

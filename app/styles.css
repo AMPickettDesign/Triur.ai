@@ -219,6 +219,8 @@ body {
 .bento-feelings .bento-card-label {
   height: 22px;
   display: flex; align-items: flex-end;
+  justify-content: center;
+  text-align: center;
 }
 
 /* ─── Mood Widget (1/3 width) ─── */
@@ -243,17 +245,19 @@ body {
 }
 
 /* ─── Feelings Widget (2/3 width) ─── */
-.bento-feelings { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bento-feelings { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
 .bento-feelings-status {
   font-size: 11px; font-weight: 700;
   color: var(--text-accent);
   text-transform: capitalize;
   margin-bottom: 3px;
+  text-align: center;
+  width: 100%;
 }
-.rel-meters { display: flex; flex-direction: column; gap: 3px; }
+.rel-meters { display: flex; flex-direction: column; gap: 3px; width: 100%; }
 .rel-meter { display: flex; align-items: center; gap: 6px; }
 .rel-label { font-size: 8px; color: var(--text-3); min-width: 62px; width: 62px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
-.rel-meter .bar-track { flex: 1; max-width: 100px; }
+.rel-meter .bar-track { flex: 1; }
 
 /* ─── Chat Well (inset area) ─── */
 #chat-area {

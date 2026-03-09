@@ -100,13 +100,28 @@
       </button>
     </div>
 
+    <!-- Memory/Personality Tab Toggle -->
+    <div class="memory-tabs" id="memory-tabs">
+      <button class="memory-tab active" data-tab="user">Memories About You</button>
+      <button class="memory-tab" data-tab="self">My Personality</button>
+    </div>
+
     <!-- Bottom Bento Row: Memory + Time + End Chat -->
     <div class="bento-row bento-bottom">
+      <!-- User Memory View (default) -->
       <div class="bento-card bento-memory" id="widget-memory">
         <div class="bento-card-label">Memory</div>
         <div class="bento-memory-stats">
           <span><span id="mem-convos" class="bento-stat-num">0</span> convos</span>
           <span><span id="mem-facts" class="bento-stat-num">0</span> facts</span>
+        </div>
+      </div>
+      <!-- Self Personality View (hidden by default) -->
+      <div class="bento-card bento-personality" id="widget-personality" style="display:none;">
+        <div class="bento-card-label">My Personality</div>
+        <div class="bento-personality-stats">
+          <span><span id="persona-opinions" class="bento-stat-num">0</span> opinions</span>
+          <span><span id="persona-behaviors" class="bento-stat-num">0</span> behaviors</span>
         </div>
       </div>
       <div class="bento-card bento-time" id="widget-time">
@@ -141,7 +156,22 @@
         <div class="mem-section-content" id="mem-opinions-list"></div>
       </div>
     </div>
+    <div id="personality-dropdown" class="memory-dropdown" style="display:none">
+      <div class="mem-section">
+        <div class="mem-section-header" data-section="my-opinions">My Opinions &#9656;</div>
+        <div class="mem-section-content" id="persona-opinions-list"></div>
+      </div>
+      <div class="mem-section">
+        <div class="mem-section-header" data-section="my-behaviors">How I Roll &#9656;</div>
+        <div class="mem-section-content" id="persona-behaviors-list"></div>
+      </div>
+      <div class="mem-section">
+        <div class="mem-section-header" data-section="timeline">Growth Timeline &#9656;</div>
+        <div class="mem-section-content" id="persona-timeline-list"></div>
+      </div>
+    </div>
     <button id="memory-toggle-btn" style="display:none">View</button>
+    <button id="personality-toggle-btn" style="display:none">View</button>
   </div>
 
     <!-- Onboarding Overlay (first run only) -->

@@ -447,6 +447,76 @@ body {
 }
 .bento-stat-num { font-weight: 700; color: var(--text-accent); font-size: 14px; }
 
+/* Memory/Personality Tabs */
+.memory-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--card-bg);
+  border-radius: var(--r-md);
+  margin-bottom: var(--bento-gap);
+}
+.memory-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font);
+}
+.memory-tab:hover {
+  color: var(--text-2);
+  background: rgba(255,255,255,0.3);
+}
+.memory-tab.active {
+  background: var(--card-bg-solid);
+  color: var(--text-1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Personality Card */
+.bento-personality {
+  flex: 1; min-width: 0;
+  display: none; flex-direction: column;
+  justify-content: center;
+  /* Use sibling's own color palette */
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+.bento-personality .bento-card-label {
+  color: rgba(255,255,255,0.9);
+}
+.bento-personality-stats {
+  display: flex; gap: 12px;
+  font-size: 11px; color: rgba(255,255,255,0.8);
+}
+.bento-personality .bento-stat-num {
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Timeline in dropdown */
+.timeline-event {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 10px;
+  color: var(--text-2);
+}
+.timeline-event:last-child { border-bottom: none; }
+.timeline-event .timeline-date {
+  font-size: 9px;
+  color: var(--text-3);
+  margin-bottom: 2px;
+}
+.timeline-event .timeline-desc {
+  color: var(--text-1);
+}
+
 .bento-time {
   flex: 0 0 90px;
   display: flex; flex-direction: column;

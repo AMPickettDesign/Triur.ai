@@ -361,6 +361,98 @@ async function refreshStatus() {
   if (mem && memFacts) memFacts.textContent = mem.fact_count || 0;
 }
 
+// ─── Memory/Personality Tabs ───
+let currentMemoryTab = 'user';
+
+async function refreshPersonality() {
+  const p = await apiGet('/api/personality');
+  if (!p) return;
+  
+  const opinionsCount = Object.keys(p.my_opinions || {}).length;
+  const behaviorsCount = (p.my_patterns || []).length;
+  
+  const personaOpinions = $('persona-opinions');
+  const personaBehaviors = $('persona-behaviors');
+  if (personaOpinions) personaOpinions.textContent = opinionsCount;
+  if (personaBehaviors) personaBehaviors.textContent = behaviorsCount;
+  
+  // Populate personality dropdown
+  const opinionsList = $('persona-opinions-list');
+  if (opinionsList) {
+    opinionsList.innerHTML = '';
+    for (const [topic, data] of Object.entries(p.my_opinions || {})) {
+      const item = document.createElement('div');
+      item.className = 'mem-item';
+      item.innerHTML = `<strong>${topic}:</strong> ${data.opinion}`;
+      opinionsList.appendChild(item);
+    }
+    if (Object.keys(p.my_opinions || {}).length === 0) {
+      opinionsList.innerHTML = '<div class="mem-item">Getting to know myself...</div>';
+    }
+  }
+  
+  const behaviorsList = $('persona-behaviors-list');
+  if (behaviorsList) {
+    behaviorsList.innerHTML = '';
+    for (const behavior of (p.my_patterns || []).slice(0, 10)) {
+      const item = document.createElement('div');
+      item.className = 'mem-item';
+      item.textContent = `${behavior.description} (${behavior.times_observed}x)`;
+      behaviorsList.appendChild(item);
+    }
+    if ((p.my_patterns || []).length === 0) {
+      behaviorsList.innerHTML = '<div class="mem-item">Still figuring out how I roll...</div>';
+    }
+  }
+  
+  const timelineList = $('persona-timeline-list');
+  if (timelineList) {
+    timelineList.innerHTML = '';
+    for (const event of (p.timeline || []).slice(0, 10)) {
+      const item = document.createElement('div');
+      item.className = 'timeline-event';
+      item.innerHTML = `<div class="timeline-date">${event.date}</div><div class="timeline-desc">${event.description}</div>`;
+      timelineList.appendChild(item);
+    }
+    if ((p.timeline || []).length === 0) {
+      timelineList.innerHTML = '<div class="mem-item">No significant moments yet...</div>';
+    }
+  }
+}
+
+function switchMemoryTab(tab) {
+  currentMemoryTab = tab;
+  const memoryCard = $('widget-memory');
+  const personalityCard = $('widget-personality');
+  const memoryDropdown = $('memory-dropdown');
+  const personalityDropdown = $('personality-dropdown');
+  const memoryTabs = document.querySelectorAll('.memory-tab');
+  
+  memoryTabs.forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  
+  if (tab === 'user') {
+    if (memoryCard) memoryCard.style.display = 'flex';
+    if (personalityCard) personalityCard.style.display = 'none';
+    if (memoryDropdown) memoryDropdown.style.display = 'block';
+    if (personalityDropdown) personalityDropdown.style.display = 'none';
+  } else {
+    if (memoryCard) memoryCard.style.display = 'none';
+    if (personalityCard) personalityCard.style.display = 'flex';
+    if (memoryDropdown) memoryDropdown.style.display = 'none';
+    if (personalityDropdown) personalityDropdown.style.display = 'block';
+    refreshPersonality();
+  }
+}
+
+// Setup tab click handlers
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.memory-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchMemoryTab(tab.dataset.tab));
+  });
+});
+
 // ─── Sibling Switching ───
 function applyTheme(siblingId) {
   // Remove all theme classes
@@ -755,6 +847,16 @@ async function loadMemoryData() {
       });
     } else opList.innerHTML = '<div class="mem-empty">No opinions formed yet.</div>';
   }
+}
+
+// ─── Personality Dropdown ───
+const persToggle = $('personality-toggle-btn'), persDropdown = $('personality-dropdown');
+if (persToggle && persDropdown) {
+  persToggle.addEventListener('click', async () => {
+    const open = persDropdown.classList.toggle('open');
+    persToggle.innerHTML = open ? 'View Personality &#9652;' : 'View Personality &#9662;';
+    if (open) await refreshPersonality();
+  });
 }
 
 // ─── Onboarding (First Run) ───

@@ -10,7 +10,7 @@ import random
 import requests
 from datetime import datetime
 
-from memory import Memory
+from memory import Memory, SelfMemory
 from relationship import Relationship
 from emotions import Emotions
 from gossip import send_gossip, get_unread_gossip, clear_inbox, build_gossip_context
@@ -90,13 +90,13 @@ class Brain:
         # Each sibling gets their own data directories
         dirs = get_sibling_dirs(sibling_id)
         self.memory = Memory(dirs, sibling_id)
+        self.self_memory = SelfMemory(dirs, sibling_id)
         self.relationship = Relationship(dirs["memory"])
         self.emotions = Emotions(dirs["memory"])
         self.user_profile = load_json(USER_PROFILE_PATH, {})
 
-        # Adaptive traits — evolve over time, stored per sibling
-        self.traits_path = os.path.join(dirs["memory"], "evolved_traits.json")
-        self.evolved_traits = load_json(self.traits_path, {})
+        # Get seed trait from personality (the one defining tendency)
+        self.seed_trait = self.personality.get("seed_trait", "curiosity")
 
         self.conversation_history = []
         self.session_start = datetime.now()
@@ -188,14 +188,20 @@ class Brain:
             parts.append(f"They prefer {styles.get(p['communication_style'], 'casual')} conversation.")
         return "\n".join(parts)
 
+    def _build_self_context(self):
+        """Build context about who I am (self-memory)."""
+        return self.self_memory.build_self_summary()
+
     def _build_evolved_traits_context(self):
-        """Show how this sibling's personality has grown."""
-        if not self.evolved_traits:
+        """Show how this sibling's personality has grown (from self-memory)."""
+        evolved = self.self_memory.get_evolved_traits()
+        if not evolved:
             return ""
         parts = ["Your personality has evolved through experience:"]
-        for trait, data in self.evolved_traits.items():
-            direction = "grown" if data["shift"] > 0 else "decreased"
-            parts.append(f"  - Your {trait} has {direction} (now {data['current']:.2f}, started at {data['baseline']:.2f})")
+        for trait, data in evolved.items():
+            if abs(data.get("shift", 0)) > 0.01:
+                direction = "increased" if data["shift"] > 0 else "decreased"
+                parts.append(f"  - {trait}: {direction} (now {data['current']:.2f}, started at {data['baseline']:.2f})")
         return "\n".join(parts)
 
     def _build_system_prompt(self, action_mode=False):
@@ -203,11 +209,15 @@ class Brain:
         dynamic = [
             self._static_prompt,
             f"\n--- TIME ---\n{self._get_time_context()}",
-            f"\n--- MEMORY ---\n{self.memory.build_context_summary()}",
+            f"\n--- MEMORY (about the USER) ---\n{self.memory.build_context_summary()}",
         ]
         profile = self._build_user_profile_context()
         if profile:
             dynamic.append(f"\n--- USER PROFILE ---\n{profile}")
+        # Add self-context (who I am)
+        self_context = self._build_self_context()
+        if self_context:
+            dynamic.append(f"\n--- ABOUT ME (my personality) ---\n{self_context}")
         traits = self._build_evolved_traits_context()
         if traits:
             dynamic.append(f"\n--- PERSONALITY GROWTH ---\n{traits}")
@@ -272,7 +282,8 @@ class Brain:
         self._evaluate_emotions(user_msg, reply)
         self._evaluate_relationship(user_msg, reply)
         self._evaluate_gossip_worthy(user_msg, reply)
-        self._evolve_traits(user_msg, reply)
+        # Natural personality evolution (invisible - happens gradually)
+        self._evolve_self_naturally(user_msg, reply)
 
     def _extract_memories(self, user_msg, reply):
         result = _ask_llm([
@@ -320,33 +331,82 @@ class Brain:
         if data and data.get("share"):
             send_gossip(self.sibling_id, data["message"], data.get("importance", 0.5))
 
-    def _evolve_traits(self, user_msg, reply):
-        """Nudge personality traits based on interaction patterns. Very gradual."""
-        base_traits = self.personality.get("core_traits", {})
-        if not base_traits:
-            return
-        # Only check every 5 messages to save LLM calls
-        if len(self.conversation_history) % 10 != 0:
-            return
+    def _evolve_self_naturally(self, user_msg, reply):
+        """Natural, invisible personality evolution.
+        Tracks self-opinions, patterns, and tiny trait shifts over time.
+        Called after every message but only makes small changes.
+        """
+        # Extract and store self-opinions (things AI said it likes/dislikes)
         result = _ask_llm([
-            {"role": "system", "content": "Personality evolution evaluator. Return only valid JSON."},
-            {"role": "user", "content": f'Base traits: {json.dumps(base_traits)}\nEvolved traits: {json.dumps(self.evolved_traits)}\nRecent exchange - User: "{user_msg}" / {self.name}: "{reply}"\n\nShould any traits shift slightly based on this interaction pattern? Shifts should be TINY (0.01-0.02 max). Only shift traits that this interaction genuinely affects.\n\nReturn JSON: {{"shifts": [{{"trait": "name", "amount": 0.01, "reason": "why"}}]}}\nEmpty if no shifts needed. JSON only.'}
-        ], temperature=0.2, max_tokens=256)
+            {"role": "system", "content": "Self-opinion extraction. Return only valid JSON."},
+            {"role": "user", "content": f'From this exchange, extract any opinions {self.name} expressed about topics.\nUser: "{user_msg}"\n{self.name}: "{reply}"\n\nReturn JSON: {{"self_opinions": [{{"topic": "topic_name", "opinion": "what they said they think about it"}}]}}\nOnly include if {self.name} clearly expressed a personal preference or opinion about something. Empty array if nothing. JSON only.'}
+        ], temperature=0.1, max_tokens=128)
         data = clean_llm_json(result)
-        if data:
-            for shift in data.get("shifts", []):
-                trait = shift["trait"]
-                amount = max(-0.02, min(0.02, shift.get("amount", 0)))
-                baseline = base_traits.get(trait, 0.5)
-                current = self.evolved_traits.get(trait, {}).get("current", baseline)
-                new_val = max(0.0, min(1.0, current + amount))
-                self.evolved_traits[trait] = {
-                    "baseline": baseline, "current": round(new_val, 3),
-                    "shift": round(new_val - baseline, 3),
-                    "last_reason": shift.get("reason", ""),
-                    "last_updated": datetime.now().isoformat()
-                }
-            save_json(self.traits_path, self.evolved_traits)
+        if data and data.get("self_opinions"):
+            for op in data["self_opinions"]:
+                topic = op.get("topic", "").lower().strip()
+                opinion = op.get("opinion", "").strip()
+                if topic and opinion:
+                    self.self_memory.store_my_opinion(topic, opinion, strength=0.5)
+                    # If this opinion has been expressed 3+ times, add a timeline event
+                    existing = self.self_memory.get_my_opinions().get(topic, {})
+                    if existing.get("times_expressed", 0) >= 3 and existing.get("times_expressed", 0) == existing.get("times_expressed", 0):
+                        self.self_memory.add_timeline_event(
+                            "opinion_formed",
+                            f"I realized I actually {opinion.lower()}",
+                            f"After mentioning {topic} a few times"
+                        )
+
+        # Track signature behaviors (things AI does repeatedly)
+        # Only check every 5 messages to reduce LLM calls
+        if len(self.conversation_history) % 5 == 0:
+            convo_str = "\n".join(
+                f"User: {m['content']}" if m["role"] == "user" else f"{self.name}: {m['content']}"
+                for m in self.conversation_history[-6:]
+            )
+            result = _ask_llm([
+                {"role": "system", "content": "Behavior pattern detection. Return only valid JSON."},
+                {"role": "user", "content": f'What behaviors did {self.name} show in recent messages?\nConversation:\n{convo_str}\n\nReturn JSON: {{"behaviors": [{{"type": "behavior_type", "description": "what they did"}}]}}\nExamples: "checks in when user seems sad", "makes dark jokes", "asks follow-up questions", "goes quiet when thinking". JSON only.'}
+            ], temperature=0.2, max_tokens=128)
+            data = clean_llm_json(result)
+            if data and data.get("behaviors"):
+                for bh in data["behaviors"]:
+                    desc = bh.get("description", "").strip()
+                    if desc:
+                        is_new = self.self_memory.store_my_pattern(desc, bh.get("type", "behavior"))
+                        if is_new:
+                            self.self_memory.add_timeline_event(
+                                "behavior_emerged",
+                                f"I noticed I do this thing: {desc}",
+                                "Started showing this behavior consistently"
+                            )
+
+        # Tiny trait shifts - only happen after significant conversation patterns
+        # Much more subtle than before - max 0.005 shift per check
+        if len(self.conversation_history) % 20 == 0:
+            base_traits = self.personality.get("core_traits", {})
+            current_evolved = self.self_memory.get_evolved_traits()
+            result = _ask_llm([
+                {"role": "system", "content": "Personality evolution evaluator. Return only valid JSON."},
+                {"role": "user", "content": f'Base traits: {json.dumps(base_traits)}\nCurrent evolved traits: {json.dumps(current_evolved)}\nRecent conversation patterns.\n\nShould any traits shift VERY SLIGHTLY based on conversation patterns? Shifts should be TINY (0.003-0.005 max). Only shift traits that this conversation genuinely affects. Most should stay the same.\n\nReturn JSON: {{"shifts": [{{"trait": "name", "new_value": 0.5}}]}}\nEmpty if no shifts needed. JSON only.'}
+            ], temperature=0.2, max_tokens=128)
+            data = clean_llm_json(result)
+            if data and data.get("shifts"):
+                for shift in data.get("shifts", []):
+                    trait = shift.get("trait", "")
+                    new_val = shift.get("new_value", 0.5)
+                    if trait:
+                        # Clamp to tiny range around current or baseline
+                        baseline = base_traits.get(trait, 0.5)
+                        current = current_evolved.get(trait, {}).get("current", baseline)
+                        # Only allow tiny movement
+                        new_val = max(current - 0.005, min(current + 0.005, new_val))
+                        new_val = max(0.0, min(1.0, new_val))
+                        self.self_memory.evolve_trait(trait, round(new_val, 3))
+
+    def _evolve_traits(self, user_msg, reply):
+        """Legacy method - redirects to natural evolution."""
+        self._evolve_self_naturally(user_msg, reply)
 
     def reflect_on_session(self):
         """End-of-session self-reflection — writes a journal entry."""
@@ -596,7 +656,7 @@ JSON array only. No other text."""
     def wipe_memory(self):
         """Amnesia — erase user knowledge but keep evolved personality.
         They're still 'them', they just don't remember the user."""
-        self.memory.wipe_memory()
+        self.memory.user_memory.wipe_user_memory()
         # Reset relationship (they don't remember the bond)
         self.relationship = Relationship(get_sibling_dirs(self.sibling_id)["memory"])
         # Reset emotions to defaults (no emotional context without memories)
@@ -614,9 +674,8 @@ JSON array only. No other text."""
     def reset_personality(self):
         """Personality snap-back — reset evolved traits to seed defaults.
         They still remember the user but their personality reverts."""
-        old_traits = dict(self.evolved_traits)
-        self.evolved_traits = {}
-        save_json(self.traits_path, {})
+        old_traits = dict(self.self_memory.get_evolved_traits())
+        self.self_memory.wipe_self()
         # Rebuild the static prompt with original personality
         self._static_prompt = self._build_static_prompt()
         # Tell siblings

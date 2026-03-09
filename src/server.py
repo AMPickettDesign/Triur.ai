@@ -109,6 +109,20 @@ def memory():
     })
 
 
+@app.route("/api/personality", methods=["GET"])
+def personality():
+    """Get the sibling's self-memory data (who they are as a person)."""
+    b = active()
+    return jsonify({
+        "my_facts": b.self_memory.get_my_facts(),
+        "my_opinions": b.self_memory.get_my_opinions(),
+        "my_patterns": b.self_memory.get_my_patterns(),
+        "evolved_traits": b.self_memory.get_evolved_traits(),
+        "timeline": b.self_memory.get_timeline(limit=10),
+        "self_summary": b.self_memory.build_self_summary()
+    })
+
+
 @app.route("/api/save", methods=["POST"])
 def save_session():
     b = active()

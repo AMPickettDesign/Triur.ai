@@ -252,8 +252,8 @@ body {
 }
 .rel-meters { display: flex; flex-direction: column; gap: 3px; }
 .rel-meter { display: flex; align-items: center; gap: 6px; }
-.rel-label { font-size: 9px; color: var(--text-3); width: 44px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.3px; }
-.rel-meter .bar-track { flex: 1; }
+.rel-label { font-size: 8px; color: var(--text-3); min-width: 62px; width: 62px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+.rel-meter .bar-track { flex: 1; max-width: 100px; }
 
 /* ─── Chat Well (inset area) ─── */
 #chat-area {

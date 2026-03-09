@@ -440,7 +440,15 @@ function updateTime() {
 
 // ─── Input ───
 inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-inputEl.addEventListener('input', () => { inputEl.style.height = 'auto'; inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px'; });
+inputEl.addEventListener('input', () => { 
+  inputEl.style.height = 'auto'; 
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px'; 
+  // Adjust messages padding based on input height so you can scroll past sprite
+  const inputHeight = inputEl.offsetHeight;
+  const basePadding = 140;
+  const extraPadding = Math.max(0, inputHeight - 44) * 2; // Extra when input grows
+  messagesEl.style.paddingBottom = (basePadding + extraPadding) + 'px';
+});
 sendBtn.addEventListener('click', sendMessage);
 
 // ─── Action Mode Toggle ───
@@ -930,6 +938,7 @@ const SPRITE_SIZE = 128;
 let pokeTimes = [];             // Timestamps of recent pokes
 let isDragging = false;
 let dragOffsetX = 0;
+let dragOffsetY = 0;
 
 function initSpriteAssignments(profile) {
   if (profile && profile.sprite_assignments) {
@@ -1082,7 +1091,9 @@ function initSpriteInteractions() {
 
     // Start drag tracking
     isDragging = false;
-    dragOffsetX = e.clientX - spriteCanvas.getBoundingClientRect().left;
+    const rect = spriteCanvas.getBoundingClientRect();
+    dragOffsetX = e.clientX - rect.left;
+    dragOffsetY = e.clientY - rect.top;
 
     const onMove = (me) => {
       if (!isDragging) {
@@ -1095,10 +1106,15 @@ function initSpriteInteractions() {
         }
         return;
       }
-      // Move sprite to mouse position
-      const areaRect = area.getBoundingClientRect();
-      let newLeft = me.clientX - areaRect.left - dragOffsetX;
-      newLeft = Math.max(0, Math.min(newLeft, areaRect.width - 200));
+      // Move sprite to mouse position (anywhere in window)
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      let newLeft = me.clientX - dragOffsetX;
+      let newTop = me.clientY - dragOffsetY;
+      
+      // Clamp to window bounds
+      newLeft = Math.max(0, Math.min(newLeft, windowWidth - 100));
+      newTop = Math.max(0, Math.min(newTop, windowHeight - 100));
 
       // Flip based on movement direction
       const currentLeft = spriteCanvas.offsetLeft;
@@ -1108,19 +1124,32 @@ function initSpriteInteractions() {
         spriteCanvas.style.transform = 'scaleX(-1)';
       }
       spriteCanvas.style.left = `${newLeft}px`;
+      spriteCanvas.style.bottom = 'auto';
+      spriteCanvas.style.top = `${newTop}px`;
     };
 
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
       spriteCanvas.style.cursor = 'grab';
-      spriteCanvas.style.transition = 'left 0.5s ease, transform 0.3s ease';
 
       if (isDragging) {
-        // Was dragging — drop them, return to idle
+        // Was dragging — drop them back to bottom center
         isDragging = false;
-        spriteLocked = false;
-        setSpriteAnimation('Idle');
+        spriteLocked = true;
+        
+        // Animate falling back to bottom center
+        spriteCanvas.style.transition = 'left 0.4s ease-out, top 0.4s ease-out, transform 0.3s ease';
+        spriteCanvas.style.left = 'calc(50% - 50px)';
+        spriteCanvas.style.top = 'auto';
+        spriteCanvas.style.bottom = '10px';
+        
+        // Play Jump/fall animation during return, then Idle
+        setSpriteAnimation('Jump', true);
+        setTimeout(() => {
+          spriteLocked = false;
+          setSpriteAnimation('Idle');
+        }, 300);
       } else {
         // Was a click/poke — play Hurt (ouch!)
         if (!spriteLocked) {

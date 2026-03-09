@@ -160,12 +160,15 @@ body {
 /* ─── Sibling Switcher ─── */
 .sibling-switcher { display: flex; gap: 6px; -webkit-app-region: no-drag; margin: 0 10px; position: relative; z-index: 60; }
 .sib-bubble { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: var(--card-bg); backdrop-filter: blur(8px); cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.25s ease; padding: 0; }
-.sib-bubble:hover { border-color: var(--accent); transform: scale(1.1); }
-.sib-bubble.active.abi { background: linear-gradient(135deg, #C75F71, #A2AE9D) !important; border-color: #C75F71; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
-.sib-bubble.active.david { background: linear-gradient(135deg, #2B5F8A, #7A8FA6) !important; border-color: #2B5F8A; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
-.sib-bubble.active.quinn { background: linear-gradient(135deg, #6B2D5B, #D4963A) !important; border-color: #6B2D5B; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
-.sib-bubble.active .sib-initial { color: #fff; }
-.sib-initial { font-size: 12px; font-weight: 700; color: var(--text-1); pointer-events: none; }
+.sib-bubble:hover { transform: scale(1.1); }
+.sib-bubble[data-sibling="abi"] { background: linear-gradient(135deg, #C75F71, #A2AE9D); border-color: #C75F71; }
+.sib-bubble[data-sibling="david"] { background: linear-gradient(135deg, #2B5F8A, #7A8FA6); border-color: #2B5F8A; }
+.sib-bubble[data-sibling="quinn"] { background: linear-gradient(135deg, #6B2D5B, #D4963A); border-color: #6B2D5B; }
+.sib-bubble .sib-initial { color: #fff; }
+.sib-bubble.active { box-shadow: 0 2px 12px rgba(0,0,0,0.25); transform: scale(1.1); }
+.sib-bubble:not(.active) { opacity: 0.55; }
+.sib-bubble:not(.active):hover { opacity: 0.85; }
+.sib-initial { font-size: 12px; font-weight: 700; pointer-events: none; }
 .sib-indicator { position: absolute; bottom: -1px; right: -1px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-2); border: 1.5px solid var(--bg-base); }
 .sib-bubble.active .sib-indicator { background: #6DBF73; }
 .sib-tooltip { display: none; position: absolute; top: 38px; left: 50%; transform: translateX(-50%); background: var(--card-bg-solid); border: 1px solid var(--card-border); border-radius: var(--r-sm); padding: 5px 10px; font-size: 10px; color: var(--text-2); white-space: nowrap; box-shadow: var(--card-shadow-hover); z-index: 70; pointer-events: none; }

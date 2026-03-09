@@ -44,20 +44,45 @@ Before running, you need:
 
 ## Quick Start
 
+### Windows
 1. **Clone or download this repo**
-2. **Install Python dependencies:**
+2. **Run it:**
+   ```
+   start.bat
+   ```
+
+### Mac
+1. **Clone or download this repo**
+2. **Make the script executable:**
+   ```
+   chmod +x start.sh
+   ```
+3. **Run it:**
+   ```
+   ./start.sh
+   ```
+
+The startup script will automatically:
+- Check for Python 3.14+ and Ollama
+- Start Ollama if not running
+- Pull the AI model if needed
+- Install Python dependencies
+- Launch the app
+
+### Manual Setup (optional)
+If you prefer to run things manually:
+1. **Install Python dependencies:**
    ```
    pip install -r requirements.txt
    ```
-3. **Install Node dependencies:**
+2. **Install Node dependencies:**
    ```
    cd app
    npm install
    ```
-4. **Run it:**
-   ```
-   start.bat
-   ```
+3. **Start Ollama:** `ollama serve`
+4. **Start the server:** `python src/server.py`
+5. **Start the app:** `cd app && npx electron .`
 
 ---
 

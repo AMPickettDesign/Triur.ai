@@ -1159,20 +1159,17 @@ function initSpriteInteractions() {
       spriteCanvas.style.cursor = 'grab';
 
       if (isDragging) {
-        // Was dragging — drop them back to center
+        // Was dragging — stay where dropped, just return to idle
         isDragging = false;
         spriteLocked = true;
         
-        // Animate falling back to center
-        spriteCanvas.style.transition = 'left 0.4s ease-out, transform 0.3s ease';
-        spriteCanvas.style.left = 'calc(50% - 90px)';
+        // Just restore cursor and play idle (no snap back)
+        spriteCanvas.style.transition = 'transform 0.3s ease';
         
-        // Play Jump/fall animation during return, then Idle
-        setSpriteAnimation('Jump', true);
         setTimeout(() => {
           spriteLocked = false;
           setSpriteAnimation('Idle');
-        }, 300);
+        }, 200);
       } else {
         // Was a click/poke — play Hurt (ouch!)
         if (!spriteLocked) {

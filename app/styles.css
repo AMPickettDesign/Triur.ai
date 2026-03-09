@@ -161,10 +161,9 @@ body {
 .sibling-switcher { display: flex; gap: 6px; -webkit-app-region: no-drag; margin: 0 10px; position: relative; z-index: 60; }
 .sib-bubble { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: var(--card-bg); backdrop-filter: blur(8px); cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.25s ease; padding: 0; }
 .sib-bubble:hover { border-color: var(--accent); transform: scale(1.1); }
-.sib-bubble.abi { --bubble-grad: linear-gradient(135deg, #C75F71, #A2AE9D); }
-.sib-bubble.david { --bubble-grad: linear-gradient(135deg, #2B5F8A, #7A8FA6); }
-.sib-bubble.quinn { --bubble-grad: linear-gradient(135deg, #6B2D5B, #D4963A); }
-.sib-bubble.active { background: var(--bubble-grad); border-color: var(--accent); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+.sib-bubble.active[data-sibling="abi"] { background: linear-gradient(135deg, #C75F71, #A2AE9D); border-color: var(--accent); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+.sib-bubble.active[data-sibling="david"] { background: linear-gradient(135deg, #2B5F8A, #7A8FA6); border-color: var(--accent); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+.sib-bubble.active[data-sibling="quinn"] { background: linear-gradient(135deg, #6B2D5B, #D4963A); border-color: var(--accent); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
 .sib-bubble.active .sib-initial { color: #fff; }
 .sib-initial { font-size: 12px; font-weight: 700; color: var(--text-1); pointer-events: none; }
 .sib-indicator { position: absolute; bottom: -1px; right: -1px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-2); border: 1.5px solid var(--bg-base); }

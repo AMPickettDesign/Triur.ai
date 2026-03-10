@@ -215,6 +215,52 @@ class UserMemory:
             for f in os.listdir(d):
                 os.remove(os.path.join(d, f))
 
+    def remember_shared_fact(self, from_sibling, category, key, value):
+        """Store info shared by a sibling. Always attributed. Never absorbed as direct knowledge."""
+        if not hasattr(self, 'shared_facts'):
+            self.shared_facts = load_json(os.path.join(self.memory_dir, "shared_facts.json"), {})
+        source_key = f"from_{from_sibling}"
+        if source_key not in self.shared_facts:
+            self.shared_facts[source_key] = {}
+        if category not in self.shared_facts[source_key]:
+            self.shared_facts[source_key][category] = {}
+        now = datetime.now().isoformat()
+        self.shared_facts[source_key][category][key] = {
+            "value": value,
+            "shared_by": from_sibling,
+            "learned_at": now,
+            "last_confirmed": now,
+            "times_referenced": 0
+        }
+        save_json(os.path.join(self.memory_dir, "shared_facts.json"), self.shared_facts)
+
+    def get_shared_facts(self, from_sibling=None):
+        """Get facts shared by siblings. Optionally filter by which sibling shared them."""
+        if not hasattr(self, 'shared_facts'):
+            self.shared_facts = load_json(os.path.join(self.memory_dir, "shared_facts.json"), {})
+        if from_sibling:
+            return self.shared_facts.get(f"from_{from_sibling}", {})
+        return self.shared_facts
+
+    def build_shared_context_summary(self):
+        """Build context string for shared facts — always attributed to source sibling."""
+        if not hasattr(self, 'shared_facts'):
+            self.shared_facts = load_json(os.path.join(self.memory_dir, "shared_facts.json"), {})
+        if not self.shared_facts:
+            return ""
+        parts = ["Things my siblings told me about the user (always reference the source naturally):"]
+        for source_key, categories in self.shared_facts.items():
+            sibling_name = source_key.replace("from_", "").capitalize()
+            for category, items in categories.items():
+                for key, data in items.items():
+                    parts.append(f"  - {sibling_name} mentioned: {key}: {data['value']}")
+        return "\n".join(parts)
+
+    def wipe_shared_facts(self):
+        """Clear shared facts on full reset."""
+        self.shared_facts = {}
+        save_json(os.path.join(self.memory_dir, "shared_facts.json"), self.shared_facts)
+
     @property
     def events(self):
         if not hasattr(self, '_events'):
@@ -454,3 +500,15 @@ class Memory:
 
     def wipe_memory(self):
         return self.user_memory.wipe_user_memory()
+
+    def remember_shared_fact(self, from_sibling, category, key, value):
+        return self.user_memory.remember_shared_fact(from_sibling, category, key, value)
+
+    def get_shared_facts(self, from_sibling=None):
+        return self.user_memory.get_shared_facts(from_sibling)
+
+    def build_shared_context_summary(self):
+        return self.user_memory.build_shared_context_summary()
+
+    def wipe_shared_facts(self):
+        return self.user_memory.wipe_shared_facts()

@@ -15,6 +15,12 @@ from relationship import Relationship
 from emotions import Emotions
 from gossip import send_gossip, get_unread_gossip, clear_inbox, build_gossip_context
 from utils import CONFIG_DIR, load_json, save_json, clean_llm_json, get_sibling_dirs
+from world import build_world_context
+from sibling_relationship import (
+    get_sibling_relationship_context,
+    handle_reset_event,
+    log_sibling_event
+)
 
 USER_PROFILE_PATH = os.path.join(CONFIG_DIR, "user_profile.json")
 OLLAMA_URL = "http://localhost:11434/api/chat"
@@ -41,7 +47,7 @@ You are NOT a chatbot. Do NOT fall into AI conversation patterns. Specifically:
 - DO have awkward moments, short responses, strong reactions, and silence
 - DO disagree, push back, get bored, change the subject
 - DO remember that real conversations have texture — not every exchange is profound
-- DO initiate topics yourself. You can send messages unprompted. You don't just sit and wait.
+- DO initiate topics yourself when your relationship stage allows it. You do not just sit and wait.
 - DO send multiple messages in a row if that's natural — real people don't always wait for a reply.
 - Your personality GROWS from interactions. You start as a blank slate with tendencies.
   Your traits are seeds, not scripts. Who you become depends on who you talk to.
@@ -107,9 +113,13 @@ class Brain:
         # Apply time-based effects on wake
         hours_away = self.memory.get_hours_since_last_chat()
         self.emotions.apply_time_effects(hours_away)
+        self.emotions.apply_weather_effects()
         self.emotions.decay_emotions()
 
         # Check gossip from siblings
+        from gossip import process_gossip_into_memory, apply_flagged_events_to_relationship
+        process_gossip_into_memory(sibling_id, self.memory)
+        apply_flagged_events_to_relationship(sibling_id, self.relationship)
         self._gossip_context = build_gossip_context(sibling_id)
         clear_inbox(sibling_id)
 
@@ -204,6 +214,45 @@ class Brain:
                 parts.append(f"  - {trait}: {direction} (now {data['current']:.2f}, started at {data['baseline']:.2f})")
         return "\n".join(parts)
 
+    def _build_stage_context(self):
+        """Build behavior instructions based on current relationship stage."""
+        stage = self.relationship.get_current_stage()
+        stages = self.personality.get("growth_stages", {})
+        stage_data = stages.get(stage, {})
+
+        if not stage_data:
+            return f"Relationship stage: {stage}. Behave accordingly."
+
+        parts = [
+            f"Current relationship stage with this user: {stage.upper().replace('_', ' ')}",
+            f"How to behave at this stage: {stage_data.get('behavior', '')}",
+            f"Humor level: {stage_data.get('humor', 'moderate')}",
+            f"Honesty level: {stage_data.get('honesty', 'surface level')}",
+        ]
+
+        if stage_data.get("initiates"):
+            parts.append("You CAN initiate conversations and reach out unprompted.")
+        else:
+            parts.append("Do NOT initiate conversations yet — wait for the user to engage.")
+
+        if stage_data.get("shares_personal"):
+            parts.append("You CAN share personal opinions, feelings, and stories.")
+        else:
+            parts.append("Do NOT share personal things yet — keep it surface level.")
+
+        unlocks = stage_data.get("unlocks", [])
+        if unlocks:
+            parts.append(f"Unlocked behaviors at this stage: {', '.join(unlocks)}")
+
+        # Sibling loyalty override — always active regardless of stage
+        parts.append(
+            "SIBLING LOYALTY OVERRIDE: If a sibling has flagged that the user "
+            "mistreated them, respond with appropriate coolness regardless of your "
+            "own comfort level with the user. Family comes first."
+        )
+
+        return "\n".join(parts)
+
     def _build_system_prompt(self, action_mode=False):
         """Full system prompt — cached static parts + dynamic context."""
         dynamic = [
@@ -214,6 +263,9 @@ class Brain:
         profile = self._build_user_profile_context()
         if profile:
             dynamic.append(f"\n--- USER PROFILE ---\n{profile}")
+        shared = self.memory.build_shared_context_summary()
+        if shared:
+            dynamic.append(f"\n--- WHAT MY SIBLINGS TOLD ME (always cite the source naturally in conversation) ---\n{shared}")
         # Add self-context (who I am)
         self_context = self._build_self_context()
         if self_context:
@@ -224,6 +276,13 @@ class Brain:
         if self._gossip_context:
             dynamic.append(f"\n--- SIBLING GOSSIP ---\n{self._gossip_context}")
         dynamic.append(f"\n--- RELATIONSHIP ---\n{self.relationship.get_mood_context()}")
+        dynamic.append(f"\n--- CURRENT STAGE BEHAVIOR ---\n{self._build_stage_context()}")
+        world_context = build_world_context(self.sibling_id)
+        if world_context:
+            dynamic.append(f"\n--- WORLD AWARENESS ---\n{world_context}")
+        sibling_rel_context = get_sibling_relationship_context(self.sibling_id)
+        if sibling_rel_context:
+            dynamic.append(f"\n--- YOUR SIBLINGS ---\n{sibling_rel_context}")
         dynamic.append(f"\n--- EMOTIONAL STATE ---\n{self.emotions.get_context_for_prompt()}")
         if action_mode:
             dynamic.append("\n--- PC ACTIONS (ACTIVE) ---")
@@ -314,12 +373,22 @@ class Brain:
         s = self.relationship.get_state()
         result = _ask_llm([
             {"role": "system", "content": "Relationship evaluation. Return only valid JSON."},
-            {"role": "user", "content": f'Current: trust={s["trust"]:.2f} fondness={s["fondness"]:.2f} respect={s["respect"]:.2f} comfort={s["comfort"]:.2f} annoyance={s["annoyance"]:.2f}\nUser: "{user_msg}"\n{self.name}: "{reply}"\n\nReturn JSON: {{"adjustments": [{{"metric": "trust|fondness|respect|comfort|annoyance", "amount": 0.01, "reason": "why"}}]}}\nAmounts -0.05 to +0.05. Only metrics that should change. JSON only.'}
+            {"role": "user", "content": f'Current: trust={s["trust"]:.2f} fondness={s["fondness"]:.2f} respect={s["respect"]:.2f} comfort={s["comfort"]:.2f} annoyance={s["annoyance"]:.2f}\nUser: "{user_msg}"\n{self.name}: "{reply}"\n\nReturn JSON: {{"adjustments": [{{"metric": "trust|fondness|respect|comfort|annoyance", "amount": 0.01, "reason": "why"}}], "flagged_event": null}}\nFor flagged_event: if something significant happened (rude, kind, manipulative, supportive, dismissive, inappropriate, emotional_moment) include: {{"event_type": "user_rude|user_kind|user_manipulative|user_supportive|user_dismissive|user_inappropriate|emotional_moment", "message": "what you would tell your siblings about this"}}\nOtherwise flagged_event should be null.\nAmounts -0.05 to +0.05. JSON only.'}
         ], temperature=0.2, max_tokens=256)
         data = clean_llm_json(result)
         if data:
             for adj in data.get("adjustments", []):
                 self.relationship.adjust(adj["metric"], adj["amount"], adj.get("reason", ""))
+            # Check if a flagged event should be sent to siblings
+            flagged = data.get("flagged_event")
+            if flagged:
+                from gossip import send_flagged_event
+                send_flagged_event(
+                    self.sibling_id,
+                    flagged.get("event_type", "user_rude"),
+                    flagged.get("message", ""),
+                    context=user_msg
+                )
 
     def _evaluate_gossip_worthy(self, user_msg, reply):
         """Decide if this exchange has info worth sharing with siblings."""
@@ -527,7 +596,7 @@ JSON array only."""
         fallbacks = {
             "abi": ["So you're the one who woke me up.", "Alright, let's see what you're about."],
             "david": ["Hey."],
-            "quinn": ["oh hi", "okay I have questions already"]
+            "quinn": ["hey.", "so. you're the one I've been hearing about."]
         }
         msgs = fallbacks.get(self.sibling_id, ["Hey."])
         now = datetime.now()
@@ -553,9 +622,9 @@ JSON array only."""
         double_texts = patterns.get("double_texts", "sometimes")
 
         # Base probability: low silence comfort = more likely to nudge
-        # silence_comfort 0.3 (Quinn) → base 0.45
-        # silence_comfort 0.4 (Abi) → base 0.35
-        # silence_comfort 0.8 (David) → base 0.10
+        # silence_comfort 0.4 (Abi) → base 0.35 — chaotic, double texts
+        # silence_comfort 0.6 (Quinn) → base 0.25 — checks in but not clingy
+        # silence_comfort 0.9 (David) → base 0.10 — very comfortable with silence
         base_prob = max(0.05, 0.55 - silence_comfort)
 
         # Modify based on relationship — higher fondness = more likely
@@ -611,27 +680,38 @@ JSON array only."""
                 tod = label
                 break
 
+        stage = self.relationship.get_current_stage()
+        stage_data = self.personality.get("growth_stages", {}).get(stage, {})
+        initiates = stage_data.get("initiates", False)
+
+        if not initiates:
+            return None
+
         prompt = f"""You are {self.name}. You want to send an unprompted message to the user.
 You haven't heard from them in about {minutes_idle} minutes. It's {tod} ({now.strftime('%I:%M %p')}).
 Your mood: {self.emotions.get_dominant()} | Energy: {energy:.1f}
 Your feelings about them: {rel_opinion['label']} (fondness: {rel.get('fondness', 0.3):.2f})
+Your relationship stage: {stage}
 What you know about them: {memory_context[:500] if memory_context else 'Not much yet.'}
 {f'Recent conversation:{chr(10)}{recent_convo}' if recent_convo else 'No recent conversation.'}
 {f'Gossip from siblings: {self._gossip_context[:300]}' if self._gossip_context else ''}
 
 Send {msg_range} message(s). These should feel NATURAL — like a real person texting unprompted.
-Types of things you might say:
+Your personality: {self.personality.get('communication_style', {}).get('default_tone', '')}
+
+Types of things you might say based on who you are:
 - A random thought or observation
 - Checking in on something they mentioned before
-- Reacting to something you've been thinking about
+- Reacting to something you have been thinking about
 - Sharing something that reminded you of them
-- A question you've been curious about
-- Commenting on the time of day
+- A question you have been curious about
+- Commenting on the time of day or weather
 - Following up on a previous conversation topic
-- Something that happened with your siblings (gossip)
+- Something that came up with your siblings
 
-DO NOT say "How can I help?" or anything service-oriented. You're a person, not an assistant.
-DO NOT be clingy or desperate. You're just... talking.
+DO NOT say "How can I help?" or anything service-oriented. You are a person, not an assistant.
+DO NOT be clingy or desperate. You are just talking.
+Stay true to your personality and current relationship stage.
 Return ONLY a JSON array of message strings. Example: ["hey", "been thinking about something"]
 JSON array only. No other text."""
 
@@ -659,6 +739,7 @@ JSON array only. No other text."""
         self.memory.user_memory.wipe_user_memory()
         # Reset relationship (they don't remember the bond)
         self.relationship = Relationship(get_sibling_dirs(self.sibling_id)["memory"])
+        self.memory.wipe_shared_facts()
         # Reset emotions to defaults (no emotional context without memories)
         self.emotions = Emotions(get_sibling_dirs(self.sibling_id)["memory"])
         self.conversation_history = []
@@ -669,6 +750,7 @@ JSON array only. No other text."""
             f"I still feel like myself but it's like meeting them for the first time.",
             importance=0.9, about_user=True
         )
+        handle_reset_event(self.sibling_id, "memory")
         return {"wiped": "memory", "sibling": self.sibling_id}
 
     def reset_personality(self):
@@ -686,6 +768,7 @@ JSON array only. No other text."""
                 f"Things that used to matter don't feel the same.",
                 importance=0.8, about_user=False
             )
+        handle_reset_event(self.sibling_id, "personality")
         return {"wiped": "personality", "sibling": self.sibling_id}
 
     def full_reset(self):

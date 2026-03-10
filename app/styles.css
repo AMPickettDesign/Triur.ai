@@ -1,129 +1,1173 @@
 /*
  * Triur.ai — Styles
- * Bento box layout. Glassmorphism + soft UI.
- * Abi (Cherry Blossom), David (Sea & Storm), Quinn (Ember & Plum)
+ * Two-layer color system: Base UI (never changes) + Sibling Accents (swap per sibling)
+ * Glassmorphism + bento layout with real depth
  */
 
-/* ─── Abi Theme — Cherry Blossom ─── */
 :root {
-  --bg-base: #FDF5F5;
-  --bg-gradient: linear-gradient(160deg, #FFF5F5 0%, #F2E0E8 40%, #E8F0E4 80%, #FDF5F5 100%);
-  --card-bg: rgba(255,255,255,0.7);
-  --card-bg-solid: #FFFFFF;
-  --card-border: rgba(255,255,255,0.5);
-  --card-shadow: 0 2px 12px rgba(84,70,58,0.06), 0 0 0 1px rgba(199,95,113,0.06);
-  --card-shadow-hover: 0 6px 24px rgba(199,95,113,0.12), 0 0 0 1px rgba(199,95,113,0.1);
-  --inset-shadow: inset 0 2px 8px rgba(84,70,58,0.06), inset 0 0 0 1px rgba(162,174,157,0.15);
-  --accent: #C75F71;
-  --accent-2: #A2AE9D;
-  --accent-warm: #FFB7C5;
-  --text-1: #54463A;
-  --text-2: #6D7968;
-  --text-3: #8A8178;
-  --text-accent: #BA5768;
-  --bubble-user: rgba(199,95,113,0.9);
-  --bubble-ai: rgba(255,255,255,0.75);
-  --bubble-user-text: #FFFFFF;
-  --bubble-ai-text: #54463A;
-  --border: rgba(162,174,157,0.2);
-  --sib-gradient: linear-gradient(135deg, #C75F71, #A2AE9D);
-  --glass-blur: 18px;
+  /* ============================================
+     BASE UI — NEVER changes per sibling
+     Light mode defaults
+  ============================================ */
+
+  /* Backgrounds */
+  --base-bg: #f7f4f2;
+  --base-bg-secondary: #f0ece8;
+  --base-panel: rgba(255, 255, 255, 0.75);
+  --base-panel-border: rgba(0, 0, 0, 0.07);
+  --base-panel-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+
+  /* Glass panels */
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-bg-strong: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.8);
+  --glass-blur: blur(16px);
+  --glass-blur-strong: blur(24px);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+  /* Typography */
+  --text-primary: #1a1a1a;
+  --text-secondary: #555555;
+  --text-tertiary: #888888;
+  --text-inverse: #ffffff;
+
+  /* Settings modal — always neutral, never sibling-colored */
+  --settings-bg: rgba(255, 255, 255, 0.97);
+  --settings-border: rgba(0, 0, 0, 0.08);
+  --settings-text: #1a1a1a;
+  --settings-text-secondary: #666666;
+  --settings-section-label: #888888;
+  --settings-input-bg: #f5f5f5;
+  --settings-input-border: rgba(0, 0, 0, 0.1);
+  --settings-toggle-inactive: #cccccc;
+  --settings-divider: rgba(0, 0, 0, 0.06);
+
+  /* UI elements */
+  --input-bg: rgba(255, 255, 255, 0.8);
+  --input-border: rgba(0, 0, 0, 0.08);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-track: transparent;
+
+  /* Chat bubbles */
+  --bubble-user-bg: rgba(255, 255, 255, 0.9);
+  --bubble-user-text: #1a1a1a;
+  --bubble-timestamp: #aaaaaa;
+
+  /* Bottom tabs */
+  --tab-bg: rgba(255, 255, 255, 0.6);
+  --tab-border: rgba(0, 0, 0, 0.06);
+  --tab-text: #666666;
+  --tab-text-hover: #1a1a1a;
+
+  /* ============================================
+     SIBLING ACCENTS — ONLY these change per sibling
+     Default: Abi (warm rose)
+  ============================================ */
+  --accent-primary: #c4687a;
+  --accent-secondary: #e8a0a8;
+  --accent-soft: rgba(196, 104, 122, 0.12);
+  --accent-gradient: linear-gradient(135deg, #e8a0a8 0%, #c4687a 100%);
+  --accent-glow: rgba(196, 104, 122, 0.2);
+
+  /* Elements that use accent color */
+  --sibling-name-color: var(--accent-primary);
+  --send-button-bg: var(--accent-gradient);
+  --send-button-shadow: 0 4px 16px var(--accent-glow);
+  --mood-underline: var(--accent-primary);
+  --feeling-bar-color: var(--accent-primary);
+  --avatar-ring: var(--accent-primary);
+  --status-dot-active: var(--accent-primary);
+  --settings-accent: var(--accent-primary);
+  --full-reset-btn: var(--accent-primary);
+
+  /* ============================================
+     LEGACY VARIABLE ALIASES — backward compatibility
+     Maps old variable names to new system
+  ============================================ */
+  --bg-base: var(--base-bg);
+  --bg-gradient: var(--base-bg);
+  --card-bg: var(--glass-bg);
+  --card-bg-solid: var(--glass-bg-strong);
+  --card-border: var(--glass-border);
+  --card-shadow: var(--glass-shadow);
+  --card-shadow-hover: var(--glass-shadow);
+  --inset-shadow: none;
+  --accent: var(--accent-primary);
+  --accent-2: var(--accent-secondary);
+  --accent-warm: var(--accent-secondary);
+  --text-1: var(--text-primary);
+  --text-2: var(--text-secondary);
+  --text-3: var(--text-tertiary);
+  --text-accent: var(--accent-primary);
+  --bubble-user: var(--accent-primary);
+  --bubble-ai: var(--glass-bg);
+  --bubble-user-text: var(--text-inverse);
+  --bubble-ai-text: var(--text-primary);
+  --border: var(--base-panel-border);
+  --sib-gradient: var(--accent-gradient);
+
+  /* Layout constants */
   --r-sm: 14px; --r-md: 20px; --r-lg: 26px; --r-xl: 32px; --r-pill: 999px;
   --titlebar-h: 56px;
   --bento-gap: 8px;
   --bento-pad: 10px;
   --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
   --transition: background 0.6s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+
+  /* ============================================
+     DARK MODE BASE — applied via [data-theme="dark"]
+  ============================================ */
 }
 
-/* ─── Abi Night ─── */
-body.nighttime {
-  --bg-base: #1A1A1F;
+[data-theme="dark"] {
+  --base-bg: #1a1a1f;
+  --base-bg-secondary: #141418;
+  --base-panel: rgba(30, 30, 38, 0.75);
+  --base-panel-border: rgba(255, 255, 255, 0.06);
+  --base-panel-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+
+  --glass-bg: rgba(30, 30, 38, 0.6);
+  --glass-bg-strong: rgba(30, 30, 38, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(16px);
+  --glass-blur-strong: blur(24px);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  --text-primary: #f0ece8;
+  --text-secondary: #a0a0a8;
+  --text-tertiary: #666670;
+  --text-inverse: #1a1a1f;
+
+  --settings-bg: rgba(28, 28, 36, 0.98);
+  --settings-border: rgba(255, 255, 255, 0.08);
+  --settings-text: #f0ece8;
+  --settings-text-secondary: #a0a0a8;
+  --settings-section-label: #666670;
+  --settings-input-bg: rgba(255, 255, 255, 0.05);
+  --settings-input-border: rgba(255, 255, 255, 0.08);
+  --settings-toggle-inactive: #444450;
+  --settings-divider: rgba(255, 255, 255, 0.05);
+
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+
+  --bubble-user-bg: rgba(255, 255, 255, 0.06);
+  --bubble-user-text: #f0ece8;
+  --bubble-timestamp: #555560;
+
+  --tab-bg: rgba(30, 30, 38, 0.6);
+  --tab-border: rgba(255, 255, 255, 0.05);
+  --tab-text: #777780;
+  --tab-text-hover: #f0ece8;
+
+  /* Legacy dark aliases */
+  --bg-base: #1a1a1f;
   --bg-gradient: linear-gradient(160deg, #1C1C22 0%, #222228 40%, #1E1E24 80%, #1A1A1F 100%);
-  --card-bg: rgba(40,40,48,0.75);
-  --card-bg-solid: #2A2A32;
-  --card-border: rgba(255,255,255,0.08);
-  --card-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03);
-  --card-shadow-hover: 0 6px 24px rgba(0,0,0,0.5);
-  --inset-shadow: inset 0 2px 8px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.03);
-  --text-1: #E0E0E0; --text-2: #989898; --text-3: #6A6A6A;
-  --text-accent: #D67A8A;
-  --bubble-user: rgba(145,63,77,0.88); --bubble-ai: rgba(40,40,48,0.9);
-  --bubble-user-text: #E0E0E0; --bubble-ai-text: #E0E0E0;
-  --border: rgba(255,255,255,0.08);
+  --card-bg: rgba(30, 30, 38, 0.6);
+  --card-bg-solid: rgba(30, 30, 38, 0.9);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --inset-shadow: none;
+  --text-1: #f0ece8;
+  --text-2: #a0a0a8;
+  --text-3: #666670;
+  --text-accent: var(--accent-primary);
+  --bubble-user: var(--accent-primary);
+  --bubble-ai: rgba(30, 30, 38, 0.9);
+  --bubble-user-text: #f0ece8;
+  --bubble-ai-text: #f0ece8;
+  --border: rgba(255, 255, 255, 0.08);
 }
 
-/* ─── David Theme — Sea & Storm ─── */
-body.theme-david {
-  --bg-base: #EFF3F8;
-  --bg-gradient: linear-gradient(160deg, #EEF3FA 0%, #D8E4F0 40%, #E0ECF4 80%, #EFF3F8 100%);
-  --card-bg: rgba(255,255,255,0.7);
-  --card-bg-solid: #FFFFFF;
-  --card-border: rgba(255,255,255,0.5);
-  --card-shadow: 0 2px 12px rgba(26,43,60,0.06), 0 0 0 1px rgba(43,95,138,0.06);
-  --card-shadow-hover: 0 6px 24px rgba(43,95,138,0.12);
-  --inset-shadow: inset 0 2px 8px rgba(26,43,60,0.06), inset 0 0 0 1px rgba(43,95,138,0.1);
-  --accent: #2B5F8A; --accent-2: #7A8FA6; --accent-warm: #A3C4DB;
-  --text-1: #1A2B3C; --text-2: #4A5D6E; --text-3: #6E7F8E;
-  --text-accent: #2B5F8A;
-  --bubble-user: rgba(43,95,138,0.9); --bubble-ai: rgba(255,255,255,0.75);
-  --bubble-user-text: #FFFFFF; --bubble-ai-text: #1A2B3C;
-  --border: rgba(43,95,138,0.12);
-  --sib-gradient: linear-gradient(135deg, #2B5F8A, #7A8FA6);
-}
-body.theme-david.nighttime {
-  --bg-base: #141820;
-  --bg-gradient: linear-gradient(160deg, #181C24 0%, #1C242E 40%, #1A2028 80%, #141820 100%);
-  --card-bg: rgba(30,40,52,0.75); --card-bg-solid: #222B38;
-  --card-border: rgba(255,255,255,0.07);
-  --card-shadow: 0 2px 12px rgba(0,0,0,0.4); --card-shadow-hover: 0 6px 24px rgba(0,0,0,0.5);
-  --inset-shadow: inset 0 2px 8px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.03);
-  --text-1: #D8DDE4; --text-2: #8A96A6; --text-3: #5A6670;
-  --text-accent: #7AB0D8;
-  --bubble-user: rgba(30,74,110,0.88); --bubble-ai: rgba(30,40,52,0.9);
-  --bubble-user-text: #D8DDE4; --bubble-ai-text: #D8DDE4;
-  --border: rgba(122,176,216,0.1);
+/* Legacy dark mode class alias — maps body.nighttime to [data-theme="dark"] behavior */
+body.nighttime {
+  --base-bg: #1a1a1f;
+  --base-bg-secondary: #141418;
+  --base-panel: rgba(30, 30, 38, 0.75);
+  --base-panel-border: rgba(255, 255, 255, 0.06);
+  --base-panel-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --glass-bg: rgba(30, 30, 38, 0.6);
+  --glass-bg-strong: rgba(30, 30, 38, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --text-primary: #f0ece8;
+  --text-secondary: #a0a0a8;
+  --text-tertiary: #666670;
+  --text-inverse: #1a1a1f;
+  --settings-bg: rgba(28, 28, 36, 0.98);
+  --settings-border: rgba(255, 255, 255, 0.08);
+  --settings-text: #f0ece8;
+  --settings-text-secondary: #a0a0a8;
+  --settings-section-label: #666670;
+  --settings-input-bg: rgba(255, 255, 255, 0.05);
+  --settings-input-border: rgba(255, 255, 255, 0.08);
+  --settings-toggle-inactive: #444450;
+  --settings-divider: rgba(255, 255, 255, 0.05);
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --bubble-user-bg: rgba(255, 255, 255, 0.06);
+  --bubble-user-text: #f0ece8;
+  --bubble-timestamp: #555560;
+  --tab-bg: rgba(30, 30, 38, 0.6);
+  --tab-border: rgba(255, 255, 255, 0.05);
+  --tab-text: #777780;
+  --tab-text-hover: #f0ece8;
+  --bg-base: #1a1a1f;
+  --bg-gradient: linear-gradient(160deg, #1C1C22 0%, #222228 40%, #1E1E24 80%, #1A1A1F 100%);
+  --card-bg: rgba(30, 30, 38, 0.6);
+  --card-bg-solid: rgba(30, 30, 38, 0.9);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --text-1: #f0ece8;
+  --text-2: #a0a0a8;
+  --text-3: #666670;
+  --text-accent: var(--accent-primary);
+  --bubble-user: var(--accent-primary);
+  --bubble-ai: rgba(30, 30, 38, 0.9);
+  --bubble-user-text: #f0ece8;
+  --bubble-ai-text: #f0ece8;
+  --border: rgba(255, 255, 255, 0.08);
 }
 
-/* ─── Quinn Theme — Ember & Plum ─── */
-body.theme-quinn {
-  --bg-base: #FBF5F0;
-  --bg-gradient: linear-gradient(160deg, #FBF3EE 0%, #F0DDD4 40%, #EDE0E8 80%, #FBF5F0 100%);
-  --card-bg: rgba(255,255,255,0.7);
-  --card-bg-solid: #FFFFFF;
-  --card-border: rgba(255,255,255,0.5);
-  --card-shadow: 0 2px 12px rgba(58,30,50,0.06), 0 0 0 1px rgba(107,45,91,0.06);
-  --card-shadow-hover: 0 6px 24px rgba(107,45,91,0.12);
-  --inset-shadow: inset 0 2px 8px rgba(58,30,50,0.06), inset 0 0 0 1px rgba(107,45,91,0.1);
-  --accent: #6B2D5B; --accent-2: #D4963A; --accent-warm: #E8B870;
-  --text-1: #3A1E32; --text-2: #6B5060; --text-3: #8A7080;
-  --text-accent: #6B2D5B;
-  --bubble-user: rgba(107,45,91,0.9); --bubble-ai: rgba(255,255,255,0.75);
-  --bubble-user-text: #FFFFFF; --bubble-ai-text: #3A1E32;
-  --border: rgba(107,45,91,0.1);
-  --sib-gradient: linear-gradient(135deg, #6B2D5B, #D4963A);
+/* ============================================
+   SIBLING ACCENT THEMES
+   Only accent variables change — base never touched
+============================================ */
+
+[data-sibling="abi"] {
+  --accent-primary: #c4687a;
+  --accent-secondary: #e8a0a8;
+  --accent-soft: rgba(196, 104, 122, 0.12);
+  --accent-gradient: linear-gradient(135deg, #e8b4ba 0%, #c4687a 100%);
+  --accent-glow: rgba(196, 104, 122, 0.25);
+  --accent: #c4687a;
+  --accent-2: #e8a0a8;
+  --accent-warm: #e8a0a8;
+  --text-accent: #c4687a;
+  --sib-gradient: linear-gradient(135deg, #e8b4ba 0%, #c4687a 100%);
+  --bubble-user: rgba(196, 104, 122, 0.9);
 }
-body.theme-quinn.nighttime {
-  --bg-base: #181218;
-  --bg-gradient: linear-gradient(160deg, #1C141C 0%, #241C24 40%, #1C1820 80%, #181218 100%);
-  --card-bg: rgba(40,32,40,0.75); --card-bg-solid: #2A2230;
-  --card-border: rgba(255,255,255,0.07);
-  --card-shadow: 0 2px 12px rgba(0,0,0,0.4); --card-shadow-hover: 0 6px 24px rgba(0,0,0,0.5);
-  --inset-shadow: inset 0 2px 8px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.03);
-  --text-1: #E0D8E0; --text-2: #A098A8; --text-3: #706878;
-  --text-accent: #C080B8;
-  --bubble-user: rgba(90,40,72,0.88); --bubble-ai: rgba(40,32,40,0.9);
-  --bubble-user-text: #E0D8E0; --bubble-ai-text: #E0D8E0;
-  --border: rgba(192,128,184,0.1);
+
+[data-sibling="david"] {
+  --accent-primary: #5b8db8;
+  --accent-secondary: #8ab4d4;
+  --accent-soft: rgba(91, 141, 184, 0.12);
+  --accent-gradient: linear-gradient(135deg, #8ab4d4 0%, #5b8db8 100%);
+  --accent-glow: rgba(91, 141, 184, 0.25);
+  --accent: #5b8db8;
+  --accent-2: #8ab4d4;
+  --accent-warm: #8ab4d4;
+  --text-accent: #5b8db8;
+  --sib-gradient: linear-gradient(135deg, #8ab4d4 0%, #5b8db8 100%);
+  --bubble-user: rgba(91, 141, 184, 0.9);
+}
+
+[data-sibling="quinn"] {
+  --accent-primary: #8b6ba8;
+  --accent-secondary: #a889c4;
+  --accent-soft: rgba(139, 107, 168, 0.12);
+  --accent-gradient: linear-gradient(135deg, #9d84b8 0%, #6b8a94 100%);
+  --accent-glow: rgba(139, 107, 168, 0.25);
+  --accent: #8b6ba8;
+  --accent-2: #a889c4;
+  --accent-warm: #a889c4;
+  --text-accent: #8b6ba8;
+  --sib-gradient: linear-gradient(135deg, #9d84b8 0%, #6b8a94 100%);
+  --bubble-user: rgba(139, 107, 168, 0.9);
+}
+
+/* ============================================
+   SETTINGS MODAL — enforced neutral
+   Never inherits sibling accent colors
+============================================ */
+
+.settings-modal,
+.settings-modal * {
+  --sibling-name-color: var(--settings-accent) !important;
+}
+
+.settings-modal {
+  background: var(--settings-bg) !important;
+  border: 1px solid var(--settings-border) !important;
+  color: var(--settings-text) !important;
+}
+
+.settings-modal h2,
+.settings-modal h3 {
+  color: var(--settings-text) !important;
+}
+
+.settings-modal .section-label,
+.settings-modal .settings-section-title {
+  color: var(--settings-section-label) !important;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.settings-modal input,
+.settings-modal textarea,
+.settings-modal select {
+  background: var(--settings-input-bg) !important;
+  border: 1px solid var(--settings-input-border) !important;
+  color: var(--settings-text) !important;
+}
+
+.settings-modal .divider {
+  border-color: var(--settings-divider) !important;
+}
+
+/* ============================================
+   GLASS PANEL BASE STYLES
+============================================ */
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-panel-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+}
+
+/* ============================================
+   ACCESSIBILITY
+   Meets WCAG AA contrast requirements
+   for both light and dark modes
+============================================ */
+
+@media (prefers-contrast: high) {
+  :root {
+    --base-panel-border: rgba(0, 0, 0, 0.2);
+    --text-secondary: #333333;
+    --glass-border: rgba(0, 0, 0, 0.3);
+  }
+
+  [data-theme="dark"] {
+    --base-panel-border: rgba(255, 255, 255, 0.2);
+    --text-secondary: #cccccc;
+    --glass-border: rgba(255, 255, 255, 0.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ─── Colorblind Modes ─── */
-body.colorblind-protanopia { --accent: #4A7CC7; --accent-warm: #D4A76A; --text-accent: #3B6AAE; --bubble-user: rgba(74,124,199,0.9); --sib-gradient: linear-gradient(135deg, #4A7CC7, var(--accent-2)); }
-body.colorblind-protanopia.nighttime { --accent: #5A8AD4; --text-accent: #6E9EDB; --bubble-user: rgba(58,94,140,0.88); }
-body.colorblind-deuteranopia { --accent: #D4803E; --accent-2: #4A7CC7; --text-accent: #B86C2F; --bubble-user: rgba(212,128,62,0.9); --sib-gradient: linear-gradient(135deg, #D4803E, #4A7CC7); }
-body.colorblind-deuteranopia.nighttime { --accent: #DA9050; --accent-2: #5A8AD4; --text-accent: #DA9050; --bubble-user: rgba(140,85,32,0.88); }
-body.colorblind-tritanopia { --accent: #2D8A8A; --accent-warm: #C75F8A; --text-accent: #257878; --bubble-user: rgba(45,138,138,0.9); --sib-gradient: linear-gradient(135deg, #2D8A8A, var(--accent-2)); }
-body.colorblind-tritanopia.nighttime { --accent: #3A9E9E; --text-accent: #4AACAC; --bubble-user: rgba(30,94,94,0.88); }
+body.colorblind-protanopia { --accent: #4A7CC7; --accent-primary: #4A7CC7; --accent-warm: #D4A76A; --text-accent: #3B6AAE; --bubble-user: rgba(74,124,199,0.9); --sib-gradient: linear-gradient(135deg, #4A7CC7, var(--accent-2)); }
+body.colorblind-protanopia.nighttime, [data-theme="dark"] body.colorblind-protanopia { --accent: #5A8AD4; --accent-primary: #5A8AD4; --text-accent: #6E9EDB; --bubble-user: rgba(58,94,140,0.88); }
+body.colorblind-deuteranopia { --accent: #D4803E; --accent-primary: #D4803E; --accent-2: #4A7CC7; --text-accent: #B86C2F; --bubble-user: rgba(212,128,62,0.9); --sib-gradient: linear-gradient(135deg, #D4803E, #4A7CC7); }
+body.colorblind-deuteranopia.nighttime, [data-theme="dark"] body.colorblind-deuteranopia { --accent: #DA9050; --accent-primary: #DA9050; --accent-2: #5A8AD4; --text-accent: #DA9050; --bubble-user: rgba(140,85,32,0.88); }
+body.colorblind-tritanopia { --accent: #2D8A8A; --accent-primary: #2D8A8A; --accent-warm: #C75F8A; --text-accent: #257878; --bubble-user: rgba(45,138,138,0.9); --sib-gradient: linear-gradient(135deg, #2D8A8A, var(--accent-2)); }
+body.colorblind-tritanopia.nighttime, [data-theme="dark"] body.colorblind-tritanopia { --accent: #3A9E9E; --accent-primary: #3A9E9E; --text-accent: #4AACAC; --bubble-user: rgba(30,94,94,0.88); }
+
+/* ============================================
+   AMBIENT BACKGROUND
+============================================ */
+
+#app-wrapper {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: var(--base-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+#ambient-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.18;
+  transition: all 2s ease;
+}
+
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: var(--accent-primary);
+  top: -150px;
+  right: -100px;
+}
+
+.orb-2 {
+  width: 350px;
+  height: 350px;
+  background: var(--accent-secondary);
+  bottom: -100px;
+  left: -80px;
+  opacity: 0.12;
+}
+
+.orb-3 {
+  width: 250px;
+  height: 250px;
+  background: var(--accent-soft);
+  top: 40%;
+  left: 30%;
+  opacity: 0.08;
+}
+
+[data-theme="dark"] .ambient-orb {
+  opacity: 0.12;
+}
+
+/* ============================================
+   TOP BAR
+============================================ */
+
+#top-bar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--base-panel-border);
+  -webkit-app-region: drag;
+}
+
+#sibling-name-area {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 120px;
+  -webkit-app-region: no-drag;
+}
+
+#sibling-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sibling-name-color);
+  letter-spacing: -0.01em;
+}
+
+#sibling-status-label {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+#sibling-switcher {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  -webkit-app-region: no-drag;
+}
+
+.sibling-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--base-panel-border);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sibling-avatar-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.sibling-avatar-btn.active {
+  border-color: var(--avatar-ring);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.status-dot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #888;
+  border: 1.5px solid var(--base-bg);
+}
+
+.status-dot.online {
+  background: #4caf82;
+}
+
+#top-controls {
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+/* ============================================
+   MAIN LAYOUT
+============================================ */
+
+#main-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 10px;
+  padding: 10px;
+  height: calc(100vh - 57px);
+  box-sizing: border-box;
+}
+
+/* ============================================
+   CHAT COLUMN
+============================================ */
+
+#chat-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+#chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+#conversation-meta {
+  padding: 12px 16px 0;
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  font-style: italic;
+  text-align: center;
+}
+
+#messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+#messages-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+#messages-area::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+/* Message bubbles */
+.message-bubble {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  position: relative;
+  animation: bubbleIn 0.2s ease;
+}
+
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message-bubble.user {
+  background: var(--bubble-user-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--base-panel-border);
+  color: var(--bubble-user-text);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.message-bubble.sibling {
+  background: var(--accent-soft);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: var(--text-primary);
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.message-timestamp {
+  font-size: 0.65rem;
+  color: var(--bubble-timestamp);
+  margin-top: 4px;
+}
+
+/* Chibi area */
+#chibi-area {
+  height: 160px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  position: relative;
+}
+
+#chibi-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Input area */
+#input-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
+}
+
+#message-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  font-family: inherit;
+  line-height: 1.5;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+#message-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+#send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--send-button-bg);
+  box-shadow: var(--send-button-shadow);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+#send-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+}
+
+.icon-btn:hover {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
+.text-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.text-btn:hover {
+  color: var(--accent-primary);
+}
+
+/* Bottom tabs */
+#bottom-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.tab-btn {
+  background: var(--tab-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--tab-border);
+  border-radius: 10px;
+  color: var(--tab-text);
+  font-size: 0.72rem;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.tab-btn:hover {
+  color: var(--tab-text-hover);
+  background: var(--glass-bg-strong);
+  border-color: var(--accent-soft);
+}
+
+/* ============================================
+   RIGHT COLUMN — BENTO GRID
+============================================ */
+
+#right-column {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: 8px;
+  min-height: 0;
+}
+
+.bento-card {
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Mood panel */
+#mood-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+#mood-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 8px var(--accent-glow));
+}
+
+#mood-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  letter-spacing: -0.01em;
+}
+
+#mood-tags-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.mood-tag {
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+  color: var(--accent-primary);
+  border: 1px solid rgba(255,255,255,0.2);
+  font-weight: 500;
+}
+
+/* Feelings panel */
+#feelings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+#feelings-dominant {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+#feelings-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.feeling-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feeling-name {
+  font-size: 0.62rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.feeling-bar-track {
+  flex: 1;
+  height: 3px;
+  background: var(--base-panel-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.feeling-bar-fill {
+  height: 100%;
+  background: var(--feeling-bar-color);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* Memory panel */
+#memory-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+#memory-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.memory-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.memory-row + .memory-row {
+  margin-top: 4px;
+}
+
+#memory-stats .mem-item {
+  margin-left: 4px;
+}
+
+.memory-count {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  min-width: 24px;
+}
+
+.memory-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Clock panel */
+#clock-panel {
+  text-align: center;
+}
+
+#clock-time {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+#clock-date {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+/* End panel */
+#end-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#end-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+#end-btn:hover {
+  color: var(--accent-primary);
+  background: var(--accent-soft);
+}
+
+/* ============================================
+   SETTINGS MODAL
+============================================ */
+
+#settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#settings-overlay.hidden {
+  display: none;
+}
+
+#settings-modal {
+  width: 480px;
+  max-height: 80vh;
+  border-radius: 20px;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--settings-divider);
+  position: sticky;
+  top: 0;
+  background: var(--settings-bg);
+  z-index: 1;
+}
+
+.settings-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+#settings-content {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Settings toggle */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--settings-divider);
+}
+
+.settings-row-label {
+  font-size: 0.88rem;
+  color: var(--settings-text);
+  font-weight: 500;
+}
+
+.settings-row-sublabel {
+  font-size: 0.72rem;
+  color: var(--settings-text-secondary);
+  margin-top: 2px;
+}
+
+.toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--settings-toggle-inactive);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggle.on {
+  background: var(--settings-accent);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.toggle.on::after {
+  transform: translateX(20px);
+}
+
+/* Sibling reset rows */
+.sibling-reset-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--settings-divider);
+}
+
+.sibling-reset-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--settings-text);
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.reset-btn {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--settings-input-border);
+  background: transparent;
+  color: var(--settings-text-secondary);
+  font-size: 0.72rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.reset-btn:hover {
+  background: var(--settings-input-bg);
+  color: var(--settings-text);
+}
+
+.reset-btn.danger {
+  border-color: var(--full-reset-btn);
+  color: var(--full-reset-btn);
+}
+
+.reset-btn.danger:hover {
+  background: rgba(196, 104, 122, 0.08);
+}
+
+/* Settings inputs */
+.settings-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--settings-input-border);
+  background: var(--settings-input-bg);
+  color: var(--settings-text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.settings-input:focus {
+  border-color: var(--settings-accent);
+}
+
+.settings-select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--settings-input-border);
+  background: var(--settings-input-bg);
+  color: var(--settings-text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.save-profile-btn {
+  padding: 10px 24px;
+  border-radius: 24px;
+  border: none;
+  background: var(--settings-accent);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.save-profile-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px var(--accent-glow);
+}
+
+/* ============================================
+   UTILITY
+============================================ */
+
+.hidden { display: none !important; }
+
+* { box-sizing: border-box; }
 
 /* ─── Base ─── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -861,7 +1905,7 @@ body {
   50% { border-bottom-color: var(--accent); }
   100% { border-bottom-color: var(--border); }
 }
-#titlebar.nudge-flash { animation: nudgeFlash 1.5s ease; }
+#titlebar.nudge-flash, #top-bar.nudge-flash { animation: nudgeFlash 1.5s ease; }
 
 /* ─── Onboarding ─── */
 .onboarding-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); backdrop-filter: blur(14px); z-index: 200; align-items: center; justify-content: center; padding: 16px; }

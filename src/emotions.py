@@ -7,6 +7,12 @@ import os
 from datetime import datetime
 from utils import load_json, save_json
 
+try:
+    from world import get_weather
+    WORLD_AVAILABLE = True
+except ImportError:
+    WORLD_AVAILABLE = False
+
 
 class Emotions:
     """Manages a sibling's emotional state."""
@@ -106,6 +112,64 @@ class Emotions:
                 self.state["energy_level"] = level
                 break
         self._save()
+
+    def apply_weather_effects(self):
+        """
+        Nudge emotions based on current weather.
+        Subtle shifts only — weather affects mood, not controls it.
+        Called once on Brain init alongside apply_time_effects.
+        """
+        if not WORLD_AVAILABLE:
+            return
+
+        try:
+            weather = get_weather()
+            mood_hint = weather.get("mood_hint", "neutral")
+
+            weather_effects = {
+                "good": {
+                    "happiness": 0.05,
+                    "excitement": 0.03,
+                    "boredom": -0.05
+                },
+                "cozy_rainy": {
+                    "happiness": 0.02,
+                    "anxiety": -0.03,
+                    "boredom": -0.02
+                },
+                "too_hot": {
+                    "frustration": 0.04,
+                    "happiness": -0.03,
+                    "anxiety": 0.02
+                },
+                "cold": {
+                    "boredom": 0.03,
+                    "loneliness": 0.02,
+                    "happiness": -0.02
+                },
+                "snowy": {
+                    "excitement": 0.03,
+                    "happiness": 0.02,
+                    "boredom": -0.02
+                },
+                "unsettled": {
+                    "anxiety": 0.05,
+                    "frustration": 0.03,
+                    "happiness": -0.03
+                },
+                "neutral": {}
+            }
+
+            effects = weather_effects.get(mood_hint, {})
+            for emotion, amount in effects.items():
+                self.adjust_emotion(
+                    emotion,
+                    amount,
+                    f"weather: {weather.get('description', 'unknown')}"
+                )
+
+        except Exception:
+            pass
 
     def _update_dominant(self):
         active = {k: v for k, v in self.state["emotions"].items() if v > 0.3}

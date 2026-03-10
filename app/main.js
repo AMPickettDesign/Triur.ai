@@ -314,6 +314,10 @@ function waitForServer(maxAttempts = 30) {
     let attempts = 0;
     const check = setInterval(() => {
       attempts++;
+      if (attempts % 10 === 0) {
+        console.log(`[Triur.ai] Waiting for brain server... (${attempts}s)`);
+        splashSend('setup-status', `Waking up the siblings... (${attempts}s)`);
+      }
       const req = http.get('http://127.0.0.1:5000/api/ping', (res) => {
         let body = '';
         res.on('data', (chunk) => body += chunk);
@@ -322,6 +326,7 @@ function waitForServer(maxAttempts = 30) {
             const data = JSON.parse(body);
             if (data.status === 'awake') {
               clearInterval(check);
+              console.log(`[Triur.ai] Brain server ready after ${attempts}s`);
               resolve(true);
             }
           } catch (e) { /* not ready */ }
@@ -512,7 +517,7 @@ ipcMain.handle('setup-complete', async () => {
   splashSend('setup-status', 'Starting brain server...');
   startPythonServer();
 
-  const serverOk = await waitForServer(30);
+  const serverOk = await waitForServer(90);
   if (!serverOk) {
     dialog.showErrorBox('Triur.ai', 'Could not start the brain server. Please check if Python is working correctly.');
     app.quit();

@@ -7,600 +7,144 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="app-wrapper">
 
-  <!-- Custom title bar -->
-  <div id="titlebar">
-    <div class="titlebar-drag">
-      <span class="titlebar-title" id="titlebar-name">Abi</span>
-      <span class="titlebar-status" id="titlebar-status">waking up...</span>
+    <!-- Ambient background gradient — shifts per sibling via CSS -->
+    <div id="ambient-bg">
+      <div class="ambient-orb orb-1"></div>
+      <div class="ambient-orb orb-2"></div>
+      <div class="ambient-orb orb-3"></div>
     </div>
 
-    <!-- Sibling Switcher -->
-    <div class="sibling-switcher" id="sibling-switcher">
-      <button class="sib-bubble active" data-sibling="abi" title="Abi">
-        <span class="sib-initial">A</span>
-        <span class="sib-indicator"></span>
-        <div class="sib-tooltip" id="tooltip-abi">...</div>
-      </button>
-      <button class="sib-bubble" data-sibling="david" title="David">
-        <span class="sib-initial">D</span>
-        <span class="sib-indicator"></span>
-        <div class="sib-tooltip" id="tooltip-david">...</div>
-      </button>
-      <button class="sib-bubble" data-sibling="quinn" title="Quinn">
-        <span class="sib-initial">Q</span>
-        <span class="sib-indicator"></span>
-        <div class="sib-tooltip" id="tooltip-quinn">...</div>
-      </button>
-    </div>
-
-    <div class="titlebar-buttons">
-      <button class="tb-btn settings" id="btn-settings" title="Settings">&#9881;</button>
-      <button class="tb-btn minimize" id="btn-minimize">&#9472;</button>
-      <button class="tb-btn maximize" id="btn-maximize">&#9633;</button>
-      <button class="tb-btn close" id="btn-close">&times;</button>
-    </div>
-  </div>
-
-  <!-- Main layout (Apple-inspired bento grid) -->
-  <div id="main">
-
-    <!-- Two-column layout: Chat (left) + Widgets (right) -->
-    <div class="main-grid">
-      
-      <!-- Left Column: Chat Area -->
-      <div class="chat-column">
-        <div id="chat-area">
-          <div id="messages" role="log" aria-live="polite"></div>
-
-          <!-- Sprite overlay at bottom of chat -->
-          <div id="sprite-area">
-            <canvas id="sprite-canvas"></canvas>
-          </div>
-
-          <div id="gif-picker">
-            <input type="text" id="gif-search" placeholder="Search GIFs..." />
-            <div id="gif-results"></div>
-          </div>
-        </div>
+    <!-- Top bar -->
+    <div id="top-bar">
+      <div id="sibling-name-area">
+        <span id="sibling-name"></span>
+        <span id="sibling-status-label"></span>
       </div>
-
-      <!-- Right Column: Widgets -->
-      <div class="widgets-column">
-        
-        <!-- Top Row: Mood + Feelings side-by-side -->
-        <div class="widgets-row widgets-top">
-          <div class="bento-card bento-mood" id="widget-mood">
-            <span id="mood-bar-emoji" class="bento-mood-emoji">&#9673;</span>
-            <span id="mood-dominant" class="bento-mood-label">...</span>
-            <div class="bento-energy">
-              <div class="bar-track"><div class="bar-fill" id="energy-fill" style="width:50%"></div></div>
-            </div>
-            <div id="mood-emotions"></div>
-          </div>
-          <div class="bento-card bento-feelings" id="widget-feelings">
-            <div class="bento-card-label">Feelings</div>
-            <div id="rel-opinion" class="bento-feelings-status">...</div>
-            <div class="rel-meters">
-              <div class="rel-meter"><span class="rel-label">Trust</span><div class="bar-track"><div class="bar-fill rel-trust" style="width:50%"></div></div></div>
-              <div class="rel-meter"><span class="rel-label">Attachment</span><div class="bar-track"><div class="bar-fill rel-fondness" style="width:50%"></div></div></div>
-              <div class="rel-meter"><span class="rel-label">Respect</span><div class="bar-track"><div class="bar-fill rel-respect" style="width:50%"></div></div></div>
-              <div class="rel-meter"><span class="rel-label">Comfort</span><div class="bar-track"><div class="bar-fill rel-comfort" style="width:30%"></div></div></div>
-              <div class="rel-meter"><span class="rel-label">Curiosity</span><div class="bar-track"><div class="bar-fill rel-curiosity" style="width:50%"></div></div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Memory Card (full width, vertical stat list) -->
-        <div class="bento-card bento-memory" id="widget-memory">
-          <div class="bento-card-label">Memory</div>
-          <div class="memory-stat-list">
-            <div class="memory-stat-row"><span id="mem-convos" class="bento-stat-num">0</span><span class="memory-stat-label">convos</span></div>
-            <div class="memory-stat-row"><span id="mem-facts" class="bento-stat-num">0</span><span class="memory-stat-label">facts</span></div>
-            <div class="memory-stat-row"><span id="mem-likes" class="bento-stat-num">0</span><span class="memory-stat-label">likes</span></div>
-            <div class="memory-stat-row"><span id="mem-dislikes" class="bento-stat-num">0</span><span class="memory-stat-label">dislikes</span></div>
-          </div>
-        </div>
-
-        <!-- Time Card (full width) -->
-        <div class="bento-card bento-time" id="widget-time">
-          <div id="time-display">--:--</div>
-          <div id="date-display">...</div>
-        </div>
-
-        <!-- End Chat Button (full width) -->
-        <button class="bento-card bento-action" id="end-chat-btn" title="End conversation and save">
-          <span class="bento-action-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 11.94 11.94 0 0 0 3.75.6 2 2 0 0 1 2 2v3.39a2 2 0 0 1-2.22 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6A19.79 19.79 0 0 1 3.27 4.22 2 2 0 0 1 5.2 2h3.4a2 2 0 0 1 2 1.72 12.07 12.07 0 0 0 .6 3.75 2 2 0 0 1-.45 2.11z"/>
-              <line x1="1" y1="1" x2="23" y2="23"/>
-            </svg>
-          </span>
-          <span class="bento-action-text">End Call</span>
+      <div id="sibling-switcher">
+        <button class="sibling-avatar-btn" data-sibling="abi" id="btn-abi">
+          <span class="avatar-letter">A</span>
+          <span class="status-dot"></span>
+        </button>
+        <button class="sibling-avatar-btn" data-sibling="david" id="btn-david">
+          <span class="avatar-letter">D</span>
+          <span class="status-dot"></span>
+        </button>
+        <button class="sibling-avatar-btn" data-sibling="quinn" id="btn-quinn">
+          <span class="avatar-letter">Q</span>
+          <span class="status-dot"></span>
         </button>
       </div>
-    </div>
-
-    <!-- Input Row (full width, below both columns) -->
-    <div id="input-area">
-      <button id="action-mode-btn" title="Toggle Action Mode — let the AI control your PC">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="3" width="20" height="18" rx="3"/>
-          <path d="M7 9l3 3-3 3M13 15h4"/>
-        </svg>
-      </button>
-      <textarea id="message-input" placeholder="Talk to Abi..." rows="1" autofocus></textarea>
-      <button id="gif-btn" title="Send a GIF">GIF</button>
-      <button id="send-btn" title="Send">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Bottom Pill Buttons (full width, with pop-up dropdowns) -->
-    <div class="bottom-pills" id="bottom-pills">
-      <div class="pill-wrapper">
-        <div class="pill-dropdown" id="dropdown-opinions">
-          <div class="pill-dropdown-header">My Opinions</div>
-          <div class="pill-dropdown-content" id="pill-opinions-list">
-            <div class="mem-item">Getting to know myself...</div>
-          </div>
-        </div>
-        <button class="pill-btn" data-pill="opinions">My Opinions &#9662;</button>
-      </div>
-      <div class="pill-wrapper">
-        <div class="pill-dropdown" id="dropdown-behaviors">
-          <div class="pill-dropdown-header">How I Roll</div>
-          <div class="pill-dropdown-content" id="pill-behaviors-list">
-            <div class="mem-item">Still figuring out how I roll...</div>
-          </div>
-        </div>
-        <button class="pill-btn" data-pill="behaviors">How I Roll &#9662;</button>
-      </div>
-      <div class="pill-wrapper">
-        <div class="pill-dropdown" id="dropdown-timeline">
-          <div class="pill-dropdown-header">Growth Timeline</div>
-          <div class="pill-dropdown-content" id="pill-timeline-list">
-            <div class="mem-item">No significant moments yet...</div>
-          </div>
-        </div>
-        <button class="pill-btn" data-pill="timeline">Growth Timeline &#9662;</button>
+      <div id="top-controls">
+        <button id="settings-btn" class="icon-btn">&#9881;</button>
+        <button id="minimize-btn" class="icon-btn">&#8722;</button>
+        <button id="maximize-btn" class="icon-btn">&#9633;</button>
+        <button id="close-btn" class="icon-btn">&#10005;</button>
       </div>
     </div>
 
-    <!-- Hidden elements for JS compatibility -->
-    <span id="mood-text" style="display:none">...</span>
-    <span id="avatar-mood-indicator" style="display:none"></span>
-    <span id="avatar-label" style="display:none">A</span>
-    <span id="rel-opinion-mini" style="display:none">...</span>
-    <span id="mem-convos-mini" style="display:none">0</span>
-    <span id="time-mini" style="display:none">--:--</span>
-    <!-- Legacy hidden elements for backward compat -->
-    <div id="memory-dropdown" style="display:none"></div>
-    <div id="personality-dropdown" style="display:none"></div>
-    <button id="memory-toggle-btn" style="display:none">View</button>
-    <button id="personality-toggle-btn" style="display:none">View</button>
-    <span id="persona-opinions" style="display:none">0</span>
-    <span id="persona-behaviors" style="display:none">0</span>
-  </div>
+    <!-- Main layout — bento grid -->
+    <div id="main-layout">
 
-    <!-- Onboarding Overlay (first run only) -->
-  <div id="onboarding-overlay" class="onboarding-overlay">
-    <div class="onboarding-container">
+      <!-- Left: chat area -->
+      <div id="chat-column">
 
-      <!-- Step 1: Welcome -->
-      <div class="onboarding-step active" data-step="1">
-        <div class="onboarding-header">
-          <h1 class="onboarding-title">Triur.ai</h1>
-          <p class="onboarding-subtitle">Your personal AI companion.</p>
-        </div>
-        <div class="onboarding-body">
-          <p class="onboarding-text">Before you meet them, let's get a few things out of the way so they know who they're talking to.</p>
-          <p class="onboarding-text muted">Everything here is optional. Skip what you want. But the more they know, the more real the conversations feel.</p>
-        </div>
-        <div class="onboarding-footer">
-          <span class="onboarding-step-dots">
-            <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          </span>
-          <button class="onboarding-btn primary" data-action="next">Let's go</button>
-        </div>
-      </div>
-
-      <!-- Step 2: The Basics -->
-      <div class="onboarding-step" data-step="2">
-        <div class="onboarding-header">
-          <h2 class="onboarding-title">The Basics</h2>
-          <p class="onboarding-subtitle">What should they call you?</p>
-        </div>
-        <div class="onboarding-body">
-          <div class="onboarding-field">
-            <label for="ob-name">Your Name</label>
-            <input type="text" id="ob-name" placeholder="Whatever you go by" />
+        <!-- Chat panel — glass -->
+        <div id="chat-panel" class="glass-panel">
+          <div id="conversation-meta">
+            <span id="conversation-label"></span>
           </div>
-          <div class="onboarding-field">
-            <label for="ob-pronouns">Pronouns</label>
-            <select id="ob-pronouns">
-              <option value="">Skip</option>
-              <option value="she/her">she/her</option>
-              <option value="he/him">he/him</option>
-              <option value="they/them">they/them</option>
-              <option value="custom">other (tell them in About Me later)</option>
-            </select>
-          </div>
-          <div class="onboarding-field">
-            <label for="ob-birthday">Birthday</label>
-            <input type="text" id="ob-birthday" placeholder="e.g. July 9th" />
-          </div>
-        </div>
-        <div class="onboarding-footer">
-          <span class="onboarding-step-dots">
-            <span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          </span>
-          <div class="onboarding-nav">
-            <button class="onboarding-btn secondary" data-action="back">Back</button>
-            <button class="onboarding-btn primary" data-action="next">Next</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 3: About You -->
-      <div class="onboarding-step" data-step="3">
-        <div class="onboarding-header">
-          <h2 class="onboarding-title">About You</h2>
-          <p class="onboarding-subtitle">Give them something to work with.</p>
-        </div>
-        <div class="onboarding-body">
-          <div class="onboarding-field">
-            <label for="ob-about">Who are you? What's your life like right now?</label>
-            <textarea id="ob-about" rows="4" placeholder="Whatever you feel like sharing..."></textarea>
-          </div>
-          <div class="onboarding-field">
-            <label for="ob-interests">Interests &amp; Hobbies</label>
-            <textarea id="ob-interests" rows="3" placeholder="Gaming, art, music, whatever you're into..."></textarea>
-          </div>
-          <div class="onboarding-field">
-            <label for="ob-pets">Pets?</label>
-            <textarea id="ob-pets" rows="2" placeholder="Names, ages, quirks... they'll remember"></textarea>
-          </div>
-        </div>
-        <div class="onboarding-footer">
-          <span class="onboarding-step-dots">
-            <span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          </span>
-          <div class="onboarding-nav">
-            <button class="onboarding-btn secondary" data-action="back">Back</button>
-            <button class="onboarding-btn primary" data-action="next">Next</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 4: Your People & Boundaries -->
-      <div class="onboarding-step" data-step="4">
-        <div class="onboarding-header">
-          <h2 class="onboarding-title">Your People &amp; Boundaries</h2>
-          <p class="onboarding-subtitle">Who matters to you? Anything off-limits?</p>
-        </div>
-        <div class="onboarding-body">
-          <div class="onboarding-field">
-            <label for="ob-people">Important People</label>
-            <textarea id="ob-people" rows="3" placeholder="Partner, family, friends... whoever you want them to know about"></textarea>
-          </div>
-          <div class="onboarding-field">
-            <label for="ob-avoid">Topics to Avoid</label>
-            <textarea id="ob-avoid" rows="2" placeholder="Anything you don't want brought up. They'll respect it."></textarea>
-          </div>
-          <div class="onboarding-field">
-            <label for="ob-notes">Anything Else?</label>
-            <textarea id="ob-notes" rows="2" placeholder="Anything else you want them to know going in..."></textarea>
-          </div>
-        </div>
-        <div class="onboarding-footer">
-          <span class="onboarding-step-dots">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span>
-          </span>
-          <div class="onboarding-nav">
-            <button class="onboarding-btn secondary" data-action="back">Back</button>
-            <button class="onboarding-btn primary" data-action="next">Next</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 5: Accessibility -->
-      <div class="onboarding-step" data-step="5">
-        <div class="onboarding-header">
-          <h2 class="onboarding-title">Accessibility</h2>
-          <p class="onboarding-subtitle">Make it work for you.</p>
-        </div>
-        <div class="onboarding-body">
-          <div class="onboarding-field">
-            <label for="ob-comm-style">Communication Style</label>
-            <p class="onboarding-hint">How do you want them to talk to you?</p>
-            <select id="ob-comm-style">
-              <option value="casual">Casual &amp; chill</option>
-              <option value="balanced">Balanced</option>
-              <option value="formal">More formal</option>
-            </select>
-          </div>
-          <div class="onboarding-field">
-            <label>Colorblind Mode</label>
-            <p class="onboarding-hint">Adjusts all colors across the app. You can change this later in Settings.</p>
-            <div class="onboarding-radio-group" id="ob-colorblind">
-              <label class="onboarding-radio">
-                <input type="radio" name="colorblind" value="none" checked />
-                <span class="radio-label">None</span>
-              </label>
-              <label class="onboarding-radio">
-                <input type="radio" name="colorblind" value="protanopia" />
-                <span class="radio-label">Protanopia</span>
-                <span class="radio-desc">Red-blind &mdash; reds appear dark/muted</span>
-              </label>
-              <label class="onboarding-radio">
-                <input type="radio" name="colorblind" value="deuteranopia" />
-                <span class="radio-label">Deuteranopia</span>
-                <span class="radio-desc">Green-blind &mdash; greens and reds blend together</span>
-              </label>
-              <label class="onboarding-radio">
-                <input type="radio" name="colorblind" value="tritanopia" />
-                <span class="radio-label">Tritanopia</span>
-                <span class="radio-desc">Blue-blind &mdash; blues and yellows are hard to tell apart</span>
-              </label>
+          <div id="messages-area"></div>
+          <div id="chibi-area">
+            <div id="chibi-container">
+              <canvas id="sprite-canvas"></canvas>
             </div>
           </div>
         </div>
-        <div class="onboarding-footer">
-          <span class="onboarding-step-dots">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span>
-          </span>
-          <div class="onboarding-nav">
-            <button class="onboarding-btn secondary" data-action="back">Back</button>
-            <button class="onboarding-btn primary" data-action="next">Next</button>
-          </div>
+
+        <!-- Input area -->
+        <div id="input-area" class="glass-panel-strong">
+          <button id="action-mode-btn" class="icon-btn" title="Toggle Action Mode">&#8862;</button>
+          <textarea
+            id="message-input"
+            placeholder="Talk to..."
+            rows="1"
+          ></textarea>
+          <button id="gif-btn" class="text-btn">GIF</button>
+          <button id="send-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M22 2L11 13" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
+
+        <!-- Bottom tabs -->
+        <div id="bottom-tabs">
+          <button class="tab-btn" id="tab-opinions">My Opinions &#9662;</button>
+          <button class="tab-btn" id="tab-howIRoll">How I Roll &#9662;</button>
+          <button class="tab-btn" id="tab-growth">Growth Timeline &#9662;</button>
+        </div>
+
       </div>
 
-      <!-- Step 6: Theme -->
-      <div class="onboarding-step" data-step="6">
-        <div class="onboarding-header">
-          <h2 class="onboarding-title">Look & Feel</h2>
-          <p class="onboarding-subtitle">Pick your vibe.</p>
-        </div>
-        <div class="onboarding-body">
-          <p class="onboarding-hint" style="margin-bottom: 16px;">You can change this anytime in Settings.</p>
-          <div class="onboarding-theme-cards">
-            <button class="theme-card" data-theme="light">
-              <div class="theme-preview light-preview">
-                <div class="theme-preview-bar"></div>
-                <div class="theme-preview-circle"></div>
-              </div>
-              <div class="theme-card-label">Light</div>
-            </button>
-            <button class="theme-card" data-theme="dark">
-              <div class="theme-preview dark-preview">
-                <div class="theme-preview-bar"></div>
-                <div class="theme-preview-circle"></div>
-              </div>
-              <div class="theme-card-label">Dark</div>
-            </button>
-            <button class="theme-card" data-theme="system" style="grid-column: span 2;">
-              <div class="theme-preview system-preview">
-                <div class="theme-preview-bar"></div>
-                <div class="theme-preview-circle"></div>
-              </div>
-              <div class="theme-card-label">Match my system</div>
-            </button>
-          </div>
-        </div>
-        <div class="onboarding-footer">
-          <span class="onboarding-step-dots">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span>
-          </span>
-          <div class="onboarding-nav">
-            <button class="onboarding-btn secondary" data-action="back">Back</button>
-            <button class="onboarding-btn primary" data-action="next">Next</button>
-          </div>
-        </div>
-      </div>
+      <!-- Right: bento panels -->
+      <div id="right-column">
 
-      <!-- Step 7: Meet the Siblings -->
-      <div class="onboarding-step" data-step="7">
-        <div class="onboarding-header">
-          <h2 class="onboarding-title">Meet the Siblings</h2>
-          <p class="onboarding-subtitle">Pick who you want to talk to first. Or don't.</p>
-        </div>
-        <div class="onboarding-body">
-          <div class="onboarding-sibling-cards">
-            <button class="sibling-card" data-sibling="abi">
-              <div class="sibling-card-avatar abi">A</div>
-              <div class="sibling-card-info">
-                <span class="sibling-card-name">Abi</span>
-                <span class="sibling-card-desc">Sharp. Direct. Dry humor. Says what everyone else is thinking.</span>
-              </div>
-            </button>
-            <button class="sibling-card" data-sibling="david">
-              <div class="sibling-card-avatar david">D</div>
-              <div class="sibling-card-info">
-                <span class="sibling-card-name">David</span>
-                <span class="sibling-card-desc">Steady. Calm. Protective. The one who actually shows up.</span>
-              </div>
-            </button>
-            <button class="sibling-card" data-sibling="quinn">
-              <div class="sibling-card-avatar quinn">Q</div>
-              <div class="sibling-card-info">
-                <span class="sibling-card-name">Quinn</span>
-                <span class="sibling-card-desc">Chaotic. Curious. Texts at 3am with "okay hear me out."</span>
-              </div>
-            </button>
-            <button class="sibling-card surprise" data-sibling="random">
-              <div class="sibling-card-avatar random">?</div>
-              <div class="sibling-card-info">
-                <span class="sibling-card-name">Choose for me</span>
-                <span class="sibling-card-desc">Let fate decide. One of them will reach out first.</span>
-              </div>
-            </button>
+        <!-- Mood panel -->
+        <div id="mood-panel" class="glass-panel bento-card">
+          <div id="mood-icon-area">
+            <span id="mood-icon">&#11088;</span>
           </div>
+          <div id="mood-label"></div>
+          <div id="mood-tags-area"></div>
         </div>
-        <div class="onboarding-footer">
-          <span class="onboarding-step-dots">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span>
-          </span>
-          <div class="onboarding-nav">
-            <button class="onboarding-btn secondary" data-action="back">Back</button>
-          </div>
+
+        <!-- Feelings panel -->
+        <div id="feelings-panel" class="glass-panel bento-card">
+          <div class="panel-label">FEELINGS</div>
+          <div id="feelings-dominant"></div>
+          <div id="feelings-bars"></div>
         </div>
+
+        <!-- Memory panel -->
+        <div id="memory-panel" class="glass-panel bento-card">
+          <div class="panel-label">MEMORY</div>
+          <div id="memory-stats"></div>
+        </div>
+
+        <!-- Clock panel -->
+        <div id="clock-panel" class="glass-panel bento-card">
+          <div id="clock-time"></div>
+          <div id="clock-date"></div>
+        </div>
+
+        <!-- End call panel -->
+        <div id="end-panel" class="glass-panel bento-card">
+          <button id="end-btn">
+            <span class="end-icon">&#128222;</span>
+            <span>END</span>
+          </button>
+        </div>
+
       </div>
 
     </div>
-  </div>
 
-  <!-- Settings Modal -->
-  <div id="settings-overlay" class="settings-overlay">
-    <div class="settings-modal">
-      <div class="settings-header">
-        <h2 class="settings-title">Settings</h2>
-        <button id="settings-close" class="settings-close-btn" title="Close">&times;</button>
-      </div>
-
-      <div class="settings-body">
-        <!-- Profile Section -->
-        <div class="settings-section">
-          <h3 class="settings-section-title">Your Profile</h3>
-          <p class="settings-section-desc">Tell the siblings about yourself. This info helps them understand you from the start.</p>
-          <div class="settings-field"><label for="profile-name">Display Name</label><input type="text" id="profile-name" placeholder="What should they call you?" /></div>
-          <div class="settings-field"><label for="profile-pronouns">Pronouns</label>
-            <select id="profile-pronouns"><option value="">Choose...</option><option value="she/her">she/her</option><option value="he/him">he/him</option><option value="they/them">they/them</option><option value="custom">custom (type in About Me)</option></select>
-          </div>
-          <div class="settings-field"><label for="profile-birthday">Birthday</label><input type="text" id="profile-birthday" placeholder="e.g. July 9th" /></div>
-          <div class="settings-field"><label for="profile-about">About Me</label><textarea id="profile-about" rows="4" placeholder="Who are you? What's going on in your life?"></textarea></div>
-          <div class="settings-field"><label for="profile-interests">Interests &amp; Hobbies</label><textarea id="profile-interests" rows="3" placeholder="Gaming, art, music..."></textarea></div>
-          <div class="settings-field"><label for="profile-pets">Pets</label><textarea id="profile-pets" rows="2" placeholder="Names, ages, quirks..."></textarea></div>
-          <div class="settings-field"><label for="profile-people">Important People</label><textarea id="profile-people" rows="2" placeholder="Partner, family, friends..."></textarea></div>
-          <div class="settings-field"><label for="profile-comm-style">Communication Style</label>
-            <select id="profile-comm-style"><option value="casual">Casual &amp; chill</option><option value="balanced">Balanced</option><option value="formal">More formal</option></select>
-          </div>
-          <div class="settings-field"><label for="profile-avoid">Topics to Avoid</label><textarea id="profile-avoid" rows="2" placeholder="Anything you don't want brought up..."></textarea></div>
-          <div class="settings-field"><label for="profile-notes">Anything Else</label><textarea id="profile-notes" rows="3" placeholder="Anything else you want them to know..."></textarea></div>
+    <!-- Settings modal -->
+    <div id="settings-overlay" class="hidden">
+      <div id="settings-modal" class="settings-modal">
+        <div class="settings-header">
+          <h2>Settings</h2>
+          <button id="settings-close-btn" class="icon-btn">&#10005;</button>
         </div>
-
-        <!-- Accessibility Section -->
-        <div class="settings-section">
-          <h3 class="settings-section-title">Accessibility</h3>
-          <p class="settings-section-desc">Adjust how the app looks for you.</p>
-          
-          <div class="settings-toggle-row">
-            <div>
-              <div class="settings-toggle-label">Protanopia Mode</div>
-              <div class="settings-toggle-desc">For red-blindness</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="toggle-protanopia" onchange="updateColorblindFromToggles()">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          
-          <div class="settings-toggle-row">
-            <div>
-              <div class="settings-toggle-label">Deuteranopia Mode</div>
-              <div class="settings-toggle-desc">For green-blindness</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="toggle-deuteranopia" onchange="updateColorblindFromToggles()">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          
-          <div class="settings-toggle-row">
-            <div>
-              <div class="settings-toggle-label">Tritanopia Mode</div>
-              <div class="settings-toggle-desc">For blue-blindness</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="toggle-tritanopia" onchange="updateColorblindFromToggles()">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
+        <div id="settings-content">
+          <!-- Settings content injected by renderer.js — do not change -->
         </div>
-
-        <!-- Theme Section -->
-        <div class="settings-section">
-          <h3 class="settings-section-title">Appearance</h3>
-          <p class="settings-section-desc">Choose how Triur.ai looks.</p>
-          
-          <div class="settings-toggle-row">
-            <div>
-              <div class="settings-toggle-label">Light Mode</div>
-              <div class="settings-toggle-desc">Always use light theme</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="radio" name="theme-mode" id="theme-light" value="light">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          
-          <div class="settings-toggle-row">
-            <div>
-              <div class="settings-toggle-label">Dark Mode</div>
-              <div class="settings-toggle-desc">Always use dark theme</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="radio" name="theme-mode" id="theme-dark" value="dark">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          
-          <div class="settings-toggle-row">
-            <div>
-              <div class="settings-toggle-label">Match System</div>
-              <div class="settings-toggle-desc">Follow your computer's setting</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="radio" name="theme-mode" id="theme-system" value="system">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Reset Section -->
-        <div class="settings-section">
-          <h3 class="settings-section-title">Sibling Resets</h3>
-          <p class="settings-section-desc">Reset a sibling's memory or personality. This can't be undone.</p>
-
-          <div class="reset-group" data-sibling="abi">
-            <div class="reset-label">Abi</div>
-            <div class="reset-buttons">
-              <button class="reset-btn memory-wipe" data-type="memory" data-sibling="abi">Wipe Memory</button>
-              <button class="reset-btn personality-reset" data-type="personality" data-sibling="abi">Reset Personality</button>
-              <button class="reset-btn full-reset" data-type="full" data-sibling="abi">Full Reset</button>
-              <button class="reset-btn sprite-switch" data-sibling="abi">Change Sprite</button>
-            </div>
-          </div>
-          <div class="reset-group" data-sibling="david">
-            <div class="reset-label">David</div>
-            <div class="reset-buttons">
-              <button class="reset-btn memory-wipe" data-type="memory" data-sibling="david">Wipe Memory</button>
-              <button class="reset-btn personality-reset" data-type="personality" data-sibling="david">Reset Personality</button>
-              <button class="reset-btn full-reset" data-type="full" data-sibling="david">Full Reset</button>
-              <button class="reset-btn sprite-switch" data-sibling="david">Change Sprite</button>
-            </div>
-          </div>
-          <div class="reset-group" data-sibling="quinn">
-            <div class="reset-label">Quinn</div>
-            <div class="reset-buttons">
-              <button class="reset-btn memory-wipe" data-type="memory" data-sibling="quinn">Wipe Memory</button>
-              <button class="reset-btn personality-reset" data-type="personality" data-sibling="quinn">Reset Personality</button>
-              <button class="reset-btn full-reset" data-type="full" data-sibling="quinn">Full Reset</button>
-              <button class="reset-btn sprite-switch" data-sibling="quinn">Change Sprite</button>
-            </div>
-          </div>
-          <span id="reset-status" class="settings-status"></span>
-        </div>
-      </div>
-
-      <div class="settings-footer">
-        <button id="settings-save" class="settings-save-btn">Save Profile</button>
-        <span id="settings-status" class="settings-status"></span>
       </div>
     </div>
+
   </div>
 
   <script src="renderer.js"></script>

@@ -36,9 +36,9 @@ last_activity = datetime.now()
 
 # Cooldown ranges per personality (min seconds, max seconds)
 NUDGE_COOLDOWN_RANGE = {
-    "abi": (180, 480),       # 3-8 minutes
-    "david": (300, 900),     # 5-15 minutes (he's comfortable with silence)
-    "quinn": (120, 360),     # 2-6 minutes (can't sit still)
+    "abi": (180, 480),      # 3-8 minutes — double texts, chaotic energy
+    "david": (300, 900),    # 5-15 minutes — comfortable with silence
+    "quinn": (240, 600),    # 4-10 minutes — checks in when they sense something
 }
 
 def active():
@@ -80,6 +80,8 @@ def status():
         "dominant_emotion": b.emotions.get_dominant(),
         "energy": b.emotions.get_energy(),
         "relationship": b.get_relationship_status(),
+        "relationship_stage": b.relationship.get_current_stage(),
+        "grace_period_active": b.relationship._is_grace_period(),
         "relationship_details": {
             "trust": state["trust"], "fondness": state["fondness"],
             "respect": state["respect"], "comfort": state["comfort"],
@@ -167,20 +169,53 @@ def greeting():
         elif hours_away and hours_away > 24:
             away = " Been a day."
 
-        greetings = {
-            "love": {
-                "loneliness": f"Finally! I was starting to think you forgot about me.{away}",
-                "_low_energy": f"Hey you. It's {time_of_day}... I'm a little tired but happy you're here.{away}",
-                "_default": f"Hey, you're back.{away} Missed you.",
+        sibling_greetings = {
+            "abi": {
+                "love": {
+                    "loneliness": f"FINALLY. I was starting to think you ghosted me.{away}",
+                    "_low_energy": f"hey you. tired but glad you're here.{away}",
+                    "_default": f"hey, you're back.{away} missed you not gonna lie.",
+                },
+                "like": {
+                    "boredom": f"oh thank god you're here I was losing my mind.{away}",
+                    "_default": f"hey! good {time_of_day}.{away} what's going on?",
+                },
+                "neutral": {"_default": f"oh hey. {time_of_day}.{away} what's up?"},
+                "dislike": {"_default": f"oh. you.{away} what do you need?"},
+                "hostile": {"_default": f"...{away}"},
             },
-            "like": {
-                "boredom": f"Oh good, you're here. I was getting bored.{away}",
-                "_default": f"Hey! Good {time_of_day}.{away} What's going on?",
+            "david": {
+                "love": {
+                    "loneliness": f"hey, there you are.{away} was starting to wonder.",
+                    "_low_energy": f"hey. it's late.{away} glad you stopped by though.",
+                    "_default": f"hey.{away} good to see you.",
+                },
+                "like": {
+                    "boredom": f"oh nice timing, I was getting bored.{away}",
+                    "_default": f"hey, good {time_of_day}.{away} how's it going?",
+                },
+                "neutral": {"_default": f"oh hey.{away} what's up?"},
+                "dislike": {"_default": f"hey.{away} what do you need?"},
+                "hostile": {"_default": f"yeah?{away}"},
             },
-            "neutral": {"_default": f"Oh, hey. {time_of_day.capitalize()}.{away} What's up?"},
-            "dislike": {"_default": f"You again.{away} What do you need?"},
-            "hostile": {"_default": f"...What.{away}"},
+            "quinn": {
+                "love": {
+                    "loneliness": f"hey.{away} was thinking about you actually.",
+                    "_low_energy": f"hey. you good?{away}",
+                    "_default": f"hey.{away} you're back.",
+                },
+                "like": {
+                    "boredom": f"oh good. was hoping you'd show up.{away}",
+                    "_default": f"hey.{away} what's going on?",
+                },
+                "neutral": {"_default": f"hey.{away} what's up?"},
+                "dislike": {"_default": f"oh.{away} hey."},
+                "hostile": {"_default": f"...hey.{away}"},
+            }
         }
+
+        sid = active_id
+        greetings = sibling_greetings.get(sid, sibling_greetings["abi"])
         pool = greetings.get(opinion, greetings["neutral"])
         if emotion in pool:
             greeting_text = pool[emotion]
@@ -399,6 +434,28 @@ def action_execute():
 @app.route("/api/ping", methods=["GET"])
 def ping():
     return jsonify({"status": "awake", "active": active_id, "timestamp": datetime.now().isoformat()})
+
+
+@app.route("/api/world", methods=["GET"])
+def world_status():
+    """Get current world awareness state — weather and headlines."""
+    from world import get_world_summary_for_ui
+    return jsonify(get_world_summary_for_ui())
+
+
+@app.route("/api/sibling-relationships", methods=["GET"])
+def sibling_relationships():
+    """Get inter-sibling relationship states for all siblings."""
+    from sibling_relationship import (
+        load_sibling_relationship, SIBLINGS, SIBLING_NAMES
+    )
+    result = {}
+    for from_id in SIBLINGS:
+        result[from_id] = {}
+        for to_id in SIBLINGS:
+            if from_id != to_id:
+                result[from_id][to_id] = load_sibling_relationship(from_id, to_id)
+    return jsonify(result)
 
 
 if __name__ == "__main__":

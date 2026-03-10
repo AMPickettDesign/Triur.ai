@@ -2,20 +2,39 @@
  * Triur.ai — Renderer
  * All UI logic: chat, sibling switching, theme swapping, reactions,
  * settings, resets, and self-initiated message polling.
+ *
+ * Updated to match new index.html bento layout (2026 rebuild).
  */
 
 const API = 'http://127.0.0.1:5000';
 
 // ─── DOM Cache ───
 const $ = id => document.getElementById(id);
-const messagesEl = $('messages'), inputEl = $('message-input'), sendBtn = $('send-btn');
-const moodText = $('mood-text'), moodDominant = $('mood-dominant');
-const energyFill = $('energy-fill'), moodEmotions = $('mood-emotions');
-const relOpinion = $('rel-opinion');
-const memConvos = $('mem-convos'), memFacts = $('mem-facts');
-const timeDisplay = $('time-display'), dateDisplay = $('date-display');
-const titlebarName = $('titlebar-name'), titlebarStatus = $('titlebar-status');
-const avatarMood = $('avatar-mood-indicator'), avatarLabel = $('avatar-label');
+
+// Chat
+const messagesEl    = $('messages-area');
+const inputEl       = $('message-input');
+const sendBtn       = $('send-btn');
+
+// Mood panel (right column)
+const moodIcon      = $('mood-icon');
+const moodLabel     = $('mood-label');
+const moodTagsArea  = $('mood-tags-area');
+
+// Feelings panel
+const feelingsDom   = $('feelings-dominant');
+const feelingsBars  = $('feelings-bars');
+
+// Memory panel
+const memoryStats   = $('memory-stats');
+
+// Clock panel
+const clockTime     = $('clock-time');
+const clockDate     = $('clock-date');
+
+// Top bar
+const siblingName   = $('sibling-name');
+const siblingStatus = $('sibling-status-label');
 
 // ─── State ───
 let isWaiting = false, isConnected = false, sessionEnded = false;
@@ -23,9 +42,11 @@ let activeSibling = 'abi';
 let actionMode = false;
 let msgCounter = 0;
 const REACTIONS = ['\u2764\uFE0F', '\uD83D\uDE02', '\uD83D\uDC4D', '\uD83D\uDE2E', '\uD83D\uDE22', '\uD83D\uDD25', '\uD83D\uDC80'];
-const THEME_MAP = { abi: '', david: 'theme-david', quinn: 'theme-quinn' };
 const NAME_MAP = { abi: 'Abi', david: 'David', quinn: 'Quinn' };
 const COLORBLIND_CLASSES = ['colorblind-protanopia', 'colorblind-deuteranopia', 'colorblind-tritanopia'];
+
+// Set default data-sibling attribute immediately so CSS accents work before boot completes
+document.documentElement.setAttribute('data-sibling', 'abi');
 
 // ─── Colorblind Mode ───
 function applyColorblind(mode) {
@@ -33,7 +54,7 @@ function applyColorblind(mode) {
   if (mode && mode !== 'none') {
     document.body.classList.add(`colorblind-${mode}`);
   }
-  // Update toggle switches in settings
+  // Update toggle switches in settings (if injected)
   if ($('toggle-protanopia')) $('toggle-protanopia').checked = (mode === 'protanopia');
   if ($('toggle-deuteranopia')) $('toggle-deuteranopia').checked = (mode === 'deuteranopia');
   if ($('toggle-tritanopia')) $('toggle-tritanopia').checked = (mode === 'tritanopia');
@@ -43,21 +64,21 @@ function updateColorblindFromToggles() {
   const protanopia = $('toggle-protanopia')?.checked;
   const deuteranopia = $('toggle-deuteranopia')?.checked;
   const tritanopia = $('toggle-tritanopia')?.checked;
-  
+
   let mode = 'none';
   if (tritanopia) mode = 'tritanopia';
   else if (deuteranopia) mode = 'deuteranopia';
   else if (protanopia) mode = 'protanopia';
-  
+
   applyColorblind(mode);
   return mode;
 }
 
-// ─── IPC ───
+// ─── IPC (window controls) ───
 const { ipcRenderer } = require('electron');
-$('btn-minimize').addEventListener('click', () => ipcRenderer.send('window-minimize'));
-$('btn-maximize').addEventListener('click', () => ipcRenderer.send('window-maximize'));
-$('btn-close').addEventListener('click', () => ipcRenderer.send('window-close'));
+$('minimize-btn').addEventListener('click', () => ipcRenderer.send('window-minimize'));
+$('maximize-btn').addEventListener('click', () => ipcRenderer.send('window-maximize'));
+$('close-btn').addEventListener('click', () => ipcRenderer.send('window-close'));
 
 // ─── API Helpers ───
 async function apiGet(ep) {
@@ -182,7 +203,7 @@ async function sendMessage() {
   if (!text || isWaiting || sessionEnded) return;
   const userMsgId = addMessage(text, 'user');
   inputEl.value = ''; inputEl.style.height = 'auto';
-  spriteOnUserMessage(); // Sprite reacts to user sending a message
+  spriteOnUserMessage();
   isWaiting = true; nudgePaused = true; showThinking(); sendBtn.disabled = true;
 
   const result = await apiPost('/api/chat', { message: text, action_mode: actionMode });
@@ -190,16 +211,14 @@ async function sendMessage() {
 
   if (result) {
     if (actionMode) {
-      // Action mode: parse and execute action tags
       const { cleanText, actions } = parseActions(result.response);
       addMessage(cleanText, activeSibling);
       if (actions.length) processActions(actions);
     } else {
-      // Chat mode: strip any accidental action tags, never execute
       const cleaned = result.response.replace(/\s*\[ACTION:\w+:\{[^}]*\}]\s*/g, '').trim();
       addMessage(cleaned || result.response, activeSibling);
     }
-    updateSidebar(result);
+    updatePanels(result);
     getSiblingReaction(userMsgId, text);
   } else {
     addMessage("*blinks* Can't think right now. Is the brain server running?", activeSibling);
@@ -209,25 +228,20 @@ async function sendMessage() {
 
 // ─── PC System Actions ───
 function parseActions(text) {
-  // Find [ACTION:type:{params}] tags in the AI response
   const actionRegex = /\[ACTION:(\w+):(\{[^}]*\})\]/g;
   const actions = [];
   let match;
   while ((match = actionRegex.exec(text)) !== null) {
     try {
       actions.push({ type: match[1], params: JSON.parse(match[2]) });
-    } catch (e) {
-      // Malformed JSON in action tag — skip it
-    }
+    } catch (e) {}
   }
-  // Strip action tags from visible text
   const cleanText = text.replace(/\s*\[ACTION:\w+:\{[^}]*\}]\s*/g, '').trim();
   return { cleanText: cleanText || text, actions };
 }
 
 async function processActions(actions) {
   for (const action of actions) {
-    // Check safety level first
     const classResult = await apiPost('/api/action/classify', { action_type: action.type });
     if (!classResult) continue;
 
@@ -237,7 +251,6 @@ async function processActions(actions) {
     }
 
     if (classResult.safety === 'safe') {
-      // Auto-execute safe actions
       const result = await apiPost('/api/action/execute', { action_type: action.type, params: action.params });
       if (result && result.success) {
         addSystemMessage(`Done: ${result.message || action.type}`);
@@ -245,14 +258,12 @@ async function processActions(actions) {
         addSystemMessage(`Failed: ${result.error || 'Unknown error'}`);
       }
     } else {
-      // Dangerous — ask permission
       showActionPermission(action);
     }
   }
 }
 
 function showActionPermission(action) {
-  // Build a human-readable description
   const descriptions = {
     run_command: `Run command: ${action.params.command || '?'}`,
     move_file: `Move file: ${action.params.source || '?'} to ${action.params.destination || '?'}`,
@@ -264,7 +275,6 @@ function showActionPermission(action) {
   };
   const desc = descriptions[action.type] || `${action.type}: ${JSON.stringify(action.params)}`;
 
-  // Use a confirm dialog (simple but effective)
   const allowed = confirm(`${NAME_MAP[activeSibling]} wants to:\n\n${desc}\n\nAllow this action?`);
   if (allowed) {
     apiPost('/api/action/execute', { action_type: action.type, params: action.params })
@@ -280,7 +290,7 @@ function showActionPermission(action) {
   }
 }
 
-// ─── Sidebar ───
+// ─── Right-Column Panels ───
 const MOOD_EMOJIS = {
   happy: '\uD83D\uDE0A', content: '\uD83D\uDE0C', excited: '\u2728', playful: '\uD83D\uDE1C',
   amused: '\uD83D\uDE04', grateful: '\uD83D\uDE4F', loving: '\u2764\uFE0F', proud: '\uD83D\uDE0E',
@@ -291,113 +301,198 @@ const MOOD_EMOJIS = {
   bored: '\uD83D\uDE34', tired: '\uD83D\uDE29', confused: '\uD83D\uDE15', surprised: '\uD83D\uDE32',
 };
 
-// Map emotion names to display-friendly text (for grammatical "Feeling X")
 const MOOD_DISPLAY = {
   curiosity: 'Curious', happiness: 'Happy', frustration: 'Frustrated',
   sadness: 'Sad', anger: 'Angry', anxiety: 'Anxious', excitement: 'Excited',
   boredom: 'Bored', confusion: 'Confused', surprise: 'Surprised',
 };
 
-function updateSidebar(data) {
+function updatePanels(data) {
+  // ─── Mood panel ───
   if (data.dominant_emotion) {
     const displayName = MOOD_DISPLAY[data.dominant_emotion.toLowerCase()] || data.dominant_emotion;
-    if (moodDominant) moodDominant.textContent = displayName;
-    if (moodText) moodText.textContent = `Feeling ${displayName}`;
-    const emojiEl = $('mood-bar-emoji');
-    if (emojiEl) {
+    if (moodLabel) moodLabel.textContent = `Feeling ${displayName}`;
+    if (moodIcon) {
       const key = data.dominant_emotion.toLowerCase();
-      emojiEl.textContent = MOOD_EMOJIS[key] || '\u2B50';
+      moodIcon.textContent = MOOD_EMOJIS[key] || '\u2B50';
     }
-    // Trigger sprite reaction for strong emotions
     emotionSpriteReaction(data.dominant_emotion);
   }
-  if (data.energy !== undefined && energyFill) energyFill.style.width = `${data.energy * 100}%`;
-  if (data.emotions && moodEmotions) {
-    moodEmotions.innerHTML = '';
+
+  // ─── Mood tags (top 3 emotions) ───
+  if (data.emotions && moodTagsArea) {
+    moodTagsArea.innerHTML = '';
     Object.entries(data.emotions)
       .sort((a, b) => b[1] - a[1])
       .filter(([_, v]) => v > 0.25)
       .slice(0, 3)
       .forEach(([name, val]) => {
         const tag = document.createElement('span');
-        tag.className = `emotion-tag${val > 0.5 ? ' high' : ''}`;
+        tag.className = `mood-tag${val > 0.5 ? ' high' : ''}`;
         const displayTag = MOOD_DISPLAY[name.toLowerCase()] || name;
         tag.textContent = `${displayTag} ${(val * 100).toFixed(0)}%`;
-        moodEmotions.appendChild(tag);
+        moodTagsArea.appendChild(tag);
       });
   }
+
+  // ─── Feelings panel ───
   if (data.relationship) {
-    if (relOpinion) relOpinion.textContent = data.relationship.label;
-    const miniRel = $('rel-opinion-mini');
-    if (miniRel) miniRel.textContent = data.relationship.label;
-    const colors = { love: '#FFB7C5', like: '#A2AE9D', neutral: '#F0B8B8', dislike: '#C75F71', hostile: '#913F4D' };
-    avatarMood.style.background = colors[data.relationship.label] || colors.neutral;
+    if (feelingsDom) feelingsDom.textContent = data.relationship.label;
   }
-  if (data.relationship_details) {
+  if (data.relationship_details && feelingsBars) {
     const d = data.relationship_details;
-    const setBar = (sel, val) => { const el = document.querySelector(sel); if (el) el.style.width = `${val * 100}%`; };
-    setBar('.rel-trust', d.trust); setBar('.rel-fondness', d.fondness);
-    setBar('.rel-respect', d.respect); setBar('.rel-comfort', d.comfort);
-    setBar('.rel-curiosity', d.curiosity || 0.5);
+    feelingsBars.innerHTML = '';
+    const bars = [
+      ['Trust', d.trust],
+      ['Fondness', d.fondness],
+      ['Respect', d.respect],
+      ['Comfort', d.comfort],
+      ['Curiosity', d.curiosity || 0.5],
+    ];
+    bars.forEach(([label, val]) => {
+      const row = document.createElement('div');
+      row.className = 'feeling-row';
+      row.innerHTML = `
+        <span class="feeling-name">${label}</span>
+        <div class="feeling-bar-track">
+          <div class="feeling-bar-fill" style="width:${(val * 100).toFixed(0)}%"></div>
+        </div>`;
+      feelingsBars.appendChild(row);
+    });
   }
 }
 
 async function refreshStatus() {
   const s = await apiGet('/api/status');
   if (!s) return;
-  updateSidebar({
+  updatePanels({
     emotions: s.emotions, dominant_emotion: s.dominant_emotion,
     energy: s.energy, relationship: s.relationship,
     relationship_details: s.relationship_details
   });
-  if (s.memory_stats) {
-    const convCount = s.memory_stats.total_conversations || 0;
-    if (memConvos) memConvos.textContent = convCount;
-    const miniConvos = $('mem-convos-mini');
-    if (miniConvos) miniConvos.textContent = `${convCount} convos`;
-  }
-  // Get fact count from memory endpoint and populate mini-list
+
+  // Memory — fetch full data (facts, opinions, stats)
   const mem = await apiGet('/api/memory');
-  if (mem && memFacts) memFacts.textContent = mem.fact_count || 0;
-  populateMemoryMiniList();
+  if (memoryStats) {
+    const convos = (s.memory_stats && s.memory_stats.total_conversations) || 0;
+    updateMemoryPanel(convos, mem);
+  }
 }
 
-// ─── Bottom Pill Dropdowns ───
-let activePill = null;
+function updateMemoryPanel(convos = 0, mem = null) {
+  if (!memoryStats) return;
+  memoryStats.innerHTML = '';
 
-function togglePillDropdown(pillName) {
-  const allDropdowns = document.querySelectorAll('.pill-dropdown');
-  const allBtns = document.querySelectorAll('.pill-btn');
-  const dropdown = $(`dropdown-${pillName}`);
-  const btn = document.querySelector(`.pill-btn[data-pill="${pillName}"]`);
+  const facts = (mem && mem.facts) || {};
+  const opinions = (mem && mem.opinions) || {};
+  const factCount = mem ? (mem.fact_count || 0) : 0;
+  const opinionCount = Object.keys(opinions).length;
 
-  if (activePill === pillName) {
-    // Close current
-    if (dropdown) dropdown.classList.remove('open');
-    if (btn) btn.classList.remove('active');
-    activePill = null;
+  // Stats row
+  const statsRow = document.createElement('div');
+  statsRow.className = 'memory-row';
+  statsRow.innerHTML = `<span class="memory-label">Conversations</span><span class="memory-count">${convos}</span>`;
+  memoryStats.appendChild(statsRow);
+
+  // Render fact categories (likes, dislikes, etc.)
+  const categoryLabels = {
+    likes: 'Likes', dislikes: 'Dislikes', preferences: 'Preferences',
+    personal: 'Personal', interests: 'Interests', people: 'People',
+    pets: 'Pets', work: 'Work', general: 'General'
+  };
+  for (const [cat, items] of Object.entries(facts)) {
+    if (!items || typeof items !== 'object') continue;
+    const entries = Object.entries(items);
+    if (entries.length === 0) continue;
+    const catLabel = categoryLabels[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+    const header = document.createElement('div');
+    header.className = 'memory-row';
+    header.innerHTML = `<span class="memory-label">${catLabel}</span><span class="memory-count">${entries.length}</span>`;
+    memoryStats.appendChild(header);
+    entries.forEach(([key, val]) => {
+      const item = document.createElement('div');
+      item.className = 'mem-item';
+      item.innerHTML = `<span class="mem-key">${key}:</span> ${val}`;
+      memoryStats.appendChild(item);
+    });
+  }
+
+  // Render opinions
+  const opEntries = Object.entries(opinions);
+  if (opEntries.length > 0) {
+    const header = document.createElement('div');
+    header.className = 'memory-row';
+    header.innerHTML = `<span class="memory-label">Opinions</span><span class="memory-count">${opinionCount}</span>`;
+    memoryStats.appendChild(header);
+    opEntries.forEach(([topic, data]) => {
+      const item = document.createElement('div');
+      item.className = 'mem-item';
+      const opinion = typeof data === 'object' ? data.opinion : data;
+      item.innerHTML = `<span class="mem-key">${topic}:</span> ${opinion}`;
+      memoryStats.appendChild(item);
+    });
+  }
+
+  // Empty state
+  if (factCount === 0 && opinionCount === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'mem-item';
+    empty.textContent = 'Still getting to know you...';
+    memoryStats.appendChild(empty);
+  }
+}
+
+// ─── Bottom Tab Dropdowns ───
+let activeTab = null;
+
+function toggleTabDropdown(tabName) {
+  // Reuse the pill dropdown approach — create a dropdown div if needed
+  const allTabs = document.querySelectorAll('.tab-btn');
+  const existingDropdown = $(`dropdown-${tabName}`);
+
+  if (activeTab === tabName && existingDropdown) {
+    existingDropdown.remove();
+    allTabs.forEach(t => t.classList.remove('active'));
+    activeTab = null;
     return;
   }
 
-  // Close all others
-  allDropdowns.forEach(d => d.classList.remove('open'));
-  allBtns.forEach(b => b.classList.remove('active'));
+  // Close existing dropdown
+  const oldDropdown = activeTab ? $(`dropdown-${activeTab}`) : null;
+  if (oldDropdown) oldDropdown.remove();
+  allTabs.forEach(t => t.classList.remove('active'));
 
-  // Open this one
-  if (dropdown) dropdown.classList.add('open');
+  // Create new dropdown
+  const dropdown = document.createElement('div');
+  dropdown.id = `dropdown-${tabName}`;
+  dropdown.className = 'pill-dropdown open';
+  dropdown.innerHTML = `<div class="pill-dropdown-header">${tabName === 'opinions' ? 'My Opinions' : tabName === 'howIRoll' ? 'How I Roll' : 'Growth Timeline'}</div><div class="pill-dropdown-content" id="tab-${tabName}-list"></div>`;
+
+  // Insert above the bottom-tabs
+  const bottomTabs = $('bottom-tabs');
+  bottomTabs.style.position = 'relative';
+  dropdown.style.position = 'absolute';
+  dropdown.style.bottom = '100%';
+  dropdown.style.left = '0';
+  dropdown.style.right = '0';
+  dropdown.style.marginBottom = '8px';
+  bottomTabs.appendChild(dropdown);
+
+  // Mark active
+  const btn = $(`tab-${tabName}`);
   if (btn) btn.classList.add('active');
-  activePill = pillName;
+  activeTab = tabName;
 
   // Populate content
-  if (pillName === 'opinions') populatePillOpinions();
-  else if (pillName === 'behaviors') populatePillBehaviors();
-  else if (pillName === 'timeline') populatePillTimeline();
+  if (tabName === 'opinions') populateTabOpinions();
+  else if (tabName === 'howIRoll') populateTabBehaviors();
+  else if (tabName === 'growth') populateTabTimeline();
 }
 
-async function populatePillOpinions() {
+async function populateTabOpinions() {
   const p = await apiGet('/api/personality');
   if (!p) return;
-  const list = $('pill-opinions-list');
+  const list = $('tab-opinions-list');
   if (!list) return;
   list.innerHTML = '';
   const entries = Object.entries(p.my_opinions || {});
@@ -413,10 +508,10 @@ async function populatePillOpinions() {
   }
 }
 
-async function populatePillBehaviors() {
+async function populateTabBehaviors() {
   const p = await apiGet('/api/personality');
   if (!p) return;
-  const list = $('pill-behaviors-list');
+  const list = $('tab-howIRoll-list');
   if (!list) return;
   list.innerHTML = '';
   const patterns = p.my_patterns || [];
@@ -432,10 +527,10 @@ async function populatePillBehaviors() {
   }
 }
 
-async function populatePillTimeline() {
+async function populateTabTimeline() {
   const p = await apiGet('/api/personality');
   if (!p) return;
-  const list = $('pill-timeline-list');
+  const list = $('tab-growth-list');
   if (!list) return;
   list.innerHTML = '';
   const events = p.timeline || [];
@@ -451,58 +546,51 @@ async function populatePillTimeline() {
   }
 }
 
-// Setup pill button click handlers
+// Setup tab button click handlers
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.pill-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      togglePillDropdown(btn.dataset.pill);
-    });
-  });
-  // Close pills when clicking outside
+  const tabOpinions = $('tab-opinions');
+  const tabHowIRoll = $('tab-howIRoll');
+  const tabGrowth = $('tab-growth');
+  if (tabOpinions) tabOpinions.addEventListener('click', (e) => { e.stopPropagation(); toggleTabDropdown('opinions'); });
+  if (tabHowIRoll) tabHowIRoll.addEventListener('click', (e) => { e.stopPropagation(); toggleTabDropdown('howIRoll'); });
+  if (tabGrowth) tabGrowth.addEventListener('click', (e) => { e.stopPropagation(); toggleTabDropdown('growth'); });
+
+  // Close tabs when clicking outside
   document.addEventListener('click', (e) => {
-    if (activePill && !e.target.closest('.pill-wrapper')) {
-      const allDropdowns = document.querySelectorAll('.pill-dropdown');
-      const allBtns = document.querySelectorAll('.pill-btn');
-      allDropdowns.forEach(d => d.classList.remove('open'));
-      allBtns.forEach(b => b.classList.remove('active'));
-      activePill = null;
+    if (activeTab && !e.target.closest('#bottom-tabs')) {
+      const dropdown = $(`dropdown-${activeTab}`);
+      if (dropdown) dropdown.remove();
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+      activeTab = null;
     }
   });
 });
 
-// ─── Memory Card Stats ───
-async function populateMemoryMiniList() {
-  const mem = await apiGet('/api/memory');
-  if (!mem) return;
+// ─── Sibling Switching ───
 
-  const facts = mem.facts || {};
-  const opinions = mem.opinions || {};
-
-  // Count likes and dislikes from opinions
-  let likeCount = 0, dislikeCount = 0;
-  Object.entries(opinions).forEach(([topic, data]) => {
-    const sentiment = typeof data === 'object' ? (data.sentiment || data.opinion || '') : String(data);
-    const sentLower = sentiment.toLowerCase();
-    if (sentLower.includes('dislike') || sentLower.includes('hate') || sentLower.includes('don\'t like') || sentLower.includes('negative')) {
-      dislikeCount++;
-    } else {
-      likeCount++;
-    }
-  });
-
-  const memLikes = $('mem-likes');
-  const memDislikes = $('mem-dislikes');
-  if (memLikes) memLikes.textContent = likeCount;
-  if (memDislikes) memDislikes.textContent = dislikeCount;
+function applySiblingTheme(siblingId) {
+  document.documentElement.setAttribute('data-sibling', siblingId);
+  // Legacy body classes for any CSS that still references them
+  document.body.classList.remove('theme-david', 'theme-quinn');
+  const legacyCls = { david: 'theme-david', quinn: 'theme-quinn' }[siblingId];
+  if (legacyCls) document.body.classList.add(legacyCls);
 }
 
-// ─── Sibling Switching ───
+function applyThemeMode(isDark) {
+  if (isDark) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.body.classList.add('nighttime');
+    document.body.classList.remove('daytime');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    document.body.classList.remove('nighttime');
+    document.body.classList.add('daytime');
+  }
+}
+
+// Legacy wrapper
 function applyTheme(siblingId) {
-  // Remove all theme classes
-  document.body.classList.remove('theme-david', 'theme-quinn');
-  const cls = THEME_MAP[siblingId];
-  if (cls) document.body.classList.add(cls);
+  applySiblingTheme(siblingId);
 }
 
 async function switchSibling(newId) {
@@ -517,13 +605,12 @@ async function switchSibling(newId) {
 
   // Update UI
   applyTheme(newId);
-  titlebarName.textContent = name;
-  avatarLabel.textContent = newId[0].toUpperCase();
+  if (siblingName) siblingName.textContent = name;
   // Swap sprite to new sibling's character
   if (spriteAssignments[newId]) {
     await loadSpriteCharacter(spriteAssignments[newId]);
   }
-  // Reset sprite position to center when switching
+  // Reset sprite position
   if (spriteCanvas) {
     spriteCanvas.style.transition = 'left 0.3s ease';
     spriteCanvas.style.left = 'calc(50% - 90px)';
@@ -532,15 +619,17 @@ async function switchSibling(newId) {
     ? `Ask ${name} to do something on your PC...`
     : `Talk to ${name}...`;
   sessionEnded = false;
-  $('end-chat-btn').disabled = false;
-  const endTextSwitch = $('end-chat-btn').querySelector('.bento-action-text');
-  if (endTextSwitch) endTextSwitch.textContent = 'End';
-  $('end-chat-btn').classList.remove('ended');
+
+  const endBtn = $('end-btn');
+  if (endBtn) {
+    endBtn.disabled = false;
+    endBtn.classList.remove('ended');
+  }
   inputEl.disabled = false;
   sendBtn.disabled = false;
 
-  // Update switcher bubbles
-  document.querySelectorAll('.sib-bubble').forEach(b => {
+  // Update switcher buttons
+  document.querySelectorAll('.sibling-avatar-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.sibling === newId);
   });
 
@@ -550,70 +639,56 @@ async function switchSibling(newId) {
   if (greeting) {
     addSystemMessage(`Conversation #${greeting.conversation_number} | ${greeting.time_of_day}`);
     addMessage(greeting.greeting, newId);
-    moodText.textContent = `Feeling ${MOOD_DISPLAY[(greeting.mood_hint || '').toLowerCase()] || greeting.mood_hint}`;
+    if (moodLabel) moodLabel.textContent = `Feeling ${MOOD_DISPLAY[(greeting.mood_hint || '').toLowerCase()] || greeting.mood_hint}`;
   }
   await refreshStatus();
-  // Restart nudge polling for new sibling
   startNudgePolling();
 }
 
-// Wire up switcher bubbles
-document.querySelectorAll('.sib-bubble').forEach(btn => {
+// Wire up switcher buttons
+document.querySelectorAll('.sibling-avatar-btn').forEach(btn => {
   btn.addEventListener('click', () => switchSibling(btn.dataset.sibling));
 });
 
-// Load daily statuses for tooltips
+// Load daily statuses for status dots
 async function loadSiblingStatuses() {
   for (const sid of ['abi', 'david', 'quinn']) {
     const r = await apiGet(`/api/sibling/status?id=${sid}`);
-    const tooltip = $(`tooltip-${sid}`);
-    if (r && tooltip) tooltip.textContent = r.status;
+    const btn = $(`btn-${sid}`);
+    if (r && btn) {
+      const dot = btn.querySelector('.status-dot');
+      if (dot) dot.classList.add('online');
+      btn.title = r.status || '';
+    }
   }
 }
 
-let themeMode = 'system'; // 'light', 'dark', or 'system'
+let themeMode = 'system';
 
 // ─── Time Widget ───
 function updateTime() {
   const now = new Date();
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  if (timeDisplay) timeDisplay.textContent = timeStr;
-  if (dateDisplay) dateDisplay.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
-  const timeMini = $('time-mini');
-  if (timeMini) timeMini.textContent = timeStr;
-  
-  // Apply theme based on mode
+  if (clockTime) clockTime.textContent = timeStr;
+  if (clockDate) clockDate.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+
   const hour = now.getHours();
   const isDaytime = hour >= 6 && hour < 18;
-  
+
   if (themeMode === 'light') {
-    document.body.classList.remove('nighttime');
-    document.body.classList.add('daytime');
+    applyThemeMode(false);
   } else if (themeMode === 'dark') {
-    document.body.classList.remove('daytime');
-    document.body.classList.add('nighttime');
+    applyThemeMode(true);
   } else {
-    // System default - follow time
-    if (isDaytime) {
-      document.body.classList.add('daytime');
-      document.body.classList.remove('nighttime');
-    } else {
-      document.body.classList.add('nighttime');
-      document.body.classList.remove('daytime');
-    }
+    applyThemeMode(!isDaytime);
   }
 }
 
 // ─── Input ───
 inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-inputEl.addEventListener('input', () => { 
-  inputEl.style.height = 'auto'; 
-  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px'; 
-  // Adjust messages padding based on input height so you can scroll past sprite
-  const inputHeight = inputEl.offsetHeight;
-  const basePadding = 140;
-  const extraPadding = Math.max(0, inputHeight - 44) * 2; // Extra when input grows
-  messagesEl.style.paddingBottom = (basePadding + extraPadding) + 'px';
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
 });
 sendBtn.addEventListener('click', sendMessage);
 
@@ -624,7 +699,7 @@ if (actionModeBtn) {
   actionModeBtn.addEventListener('click', () => {
     actionMode = !actionMode;
     actionModeBtn.classList.toggle('active', actionMode);
-    inputArea.classList.toggle('action-mode', actionMode);
+    if (inputArea) inputArea.classList.toggle('action-mode', actionMode);
     inputEl.placeholder = actionMode
       ? `Ask ${NAME_MAP[activeSibling]} to do something on your PC...`
       : `Talk to ${NAME_MAP[activeSibling]}...`;
@@ -632,50 +707,64 @@ if (actionModeBtn) {
   });
 }
 
-// ─── GIF Picker (GIPHY API) ───
+// ─── GIF Picker ───
 const GIPHY_API_KEY = 'Zg4a7VJ3GgVIq6YCzrI4BtjFwMPD8lxZ';
 const gifBtn = $('gif-btn');
-const gifSearch = $('gif-search');
-const gifResults = $('gif-results');
-const gifPicker = $('gif-picker');
-let gifDebounce = null;
+
+// GIF picker is no longer in the HTML as a dedicated panel.
+// We create it dynamically when the GIF button is clicked.
+let gifPickerEl = null;
+
+function createGifPicker() {
+  if (gifPickerEl) return gifPickerEl;
+  gifPickerEl = document.createElement('div');
+  gifPickerEl.id = 'gif-picker';
+  gifPickerEl.innerHTML = `
+    <input type="text" id="gif-search" placeholder="Search GIFs...">
+    <div id="gif-results"></div>`;
+  // Position it above the input area
+  const chatColumn = $('chat-column');
+  if (chatColumn) chatColumn.appendChild(gifPickerEl);
+  gifPickerEl.style.position = 'absolute';
+  gifPickerEl.style.bottom = '80px';
+  gifPickerEl.style.left = '10px';
+  gifPickerEl.style.zIndex = '20';
+
+  const search = gifPickerEl.querySelector('#gif-search');
+  let debounce = null;
+  search.addEventListener('input', () => {
+    clearTimeout(debounce);
+    const query = search.value.trim();
+    if (!query) { loadTrendingGifs(); return; }
+    debounce = setTimeout(() => searchGifs(query), 400);
+  });
+  return gifPickerEl;
+}
 
 if (gifBtn) {
   gifBtn.addEventListener('click', () => {
-    if (gifPicker) {
-      gifPicker.classList.toggle('open');
-      if (gifPicker.classList.contains('open')) {
-        gifSearch.focus();
-        // Load trending GIFs when opening with empty search
-        if (!gifSearch.value.trim()) loadTrendingGifs();
-      }
+    const picker = createGifPicker();
+    picker.classList.toggle('open');
+    if (picker.classList.contains('open')) {
+      const search = picker.querySelector('#gif-search');
+      if (search) search.focus();
+      if (!search.value.trim()) loadTrendingGifs();
     }
   });
 }
 
-// Close picker when clicking outside
+// Close GIF picker when clicking outside
 document.addEventListener('click', e => {
-  if (gifPicker && gifPicker.classList.contains('open') && !gifPicker.contains(e.target) && e.target !== gifBtn) {
-    gifPicker.classList.remove('open');
+  if (gifPickerEl && gifPickerEl.classList.contains('open') && !gifPickerEl.contains(e.target) && e.target !== gifBtn) {
+    gifPickerEl.classList.remove('open');
   }
 });
 
-// Search as user types (debounced)
-if (gifSearch) {
-  gifSearch.addEventListener('input', () => {
-    clearTimeout(gifDebounce);
-    const query = gifSearch.value.trim();
-    if (!query) {
-      loadTrendingGifs();
-      return;
-    }
-    gifDebounce = setTimeout(() => searchGifs(query), 400);
-  });
-}
-
 async function searchGifs(query) {
+  const results = gifPickerEl ? gifPickerEl.querySelector('#gif-results') : null;
+  if (!results) return;
   if (GIPHY_API_KEY === 'PASTE_YOUR_KEY_HERE') {
-    gifResults.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">GIPHY API key not set. Get one at developers.giphy.com/dashboard</div>';
+    results.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">GIPHY API key not set.</div>';
     return;
   }
   try {
@@ -684,13 +773,15 @@ async function searchGifs(query) {
     const data = await resp.json();
     displayGifs(data.data || []);
   } catch (e) {
-    gifResults.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">Failed to load GIFs.</div>';
+    results.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">Failed to load GIFs.</div>';
   }
 }
 
 async function loadTrendingGifs() {
+  const results = gifPickerEl ? gifPickerEl.querySelector('#gif-results') : null;
+  if (!results) return;
   if (GIPHY_API_KEY === 'PASTE_YOUR_KEY_HERE') {
-    gifResults.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">GIPHY API key not set. Get one at developers.giphy.com/dashboard</div>';
+    results.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">GIPHY API key not set.</div>';
     return;
   }
   try {
@@ -699,18 +790,19 @@ async function loadTrendingGifs() {
     const data = await resp.json();
     displayGifs(data.data || []);
   } catch (e) {
-    gifResults.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">Failed to load GIFs.</div>';
+    results.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">Failed to load GIFs.</div>';
   }
 }
 
-function displayGifs(results) {
-  gifResults.innerHTML = '';
-  if (!results.length) {
-    gifResults.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">No GIFs found.</div>';
+function displayGifs(gifs) {
+  const results = gifPickerEl ? gifPickerEl.querySelector('#gif-results') : null;
+  if (!results) return;
+  results.innerHTML = '';
+  if (!gifs.length) {
+    results.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">No GIFs found.</div>';
     return;
   }
-  results.forEach(gif => {
-    // Use fixed_height_small for preview, original for sending
+  gifs.forEach(gif => {
     const previewUrl = gif.images?.fixed_height_small?.url || gif.images?.fixed_height?.url;
     const fullUrl = gif.images?.original?.url || gif.images?.fixed_height?.url || previewUrl;
     if (!previewUrl) return;
@@ -720,33 +812,29 @@ function displayGifs(results) {
     img.alt = gif.title || 'GIF';
     img.loading = 'lazy';
     img.addEventListener('click', () => sendGif(fullUrl));
-    gifResults.appendChild(img);
+    results.appendChild(img);
   });
 }
 
 async function sendGif(gifUrl) {
   if (!gifUrl || isWaiting || sessionEnded) return;
-  // Close the picker
-  gifPicker.classList.remove('open');
-  gifSearch.value = '';
+  if (gifPickerEl) { gifPickerEl.classList.remove('open'); const s = gifPickerEl.querySelector('#gif-search'); if (s) s.value = ''; }
 
-  // Show the GIF as a user message
   const imgHtml = `<img class="gif-message" src="${gifUrl}" alt="GIF" />`;
   addMessage(imgHtml, 'user');
 
-  // Send to AI as a description
   isWaiting = true; nudgePaused = true; showThinking(); sendBtn.disabled = true;
   const result = await apiPost('/api/chat', { message: '[User sent a GIF]' });
   hideThinking(); isWaiting = false; nudgePaused = false; sendBtn.disabled = false;
 
   if (result) {
     addMessage(result.response, activeSibling);
-    updateSidebar(result);
+    updatePanels(result);
   }
   inputEl.focus();
 }
 
-// ─── Settings ───
+// ─── Settings Modal ───
 const settingsOverlay = $('settings-overlay');
 const PROFILE_FIELDS = {
   'profile-name': 'display_name', 'profile-pronouns': 'pronouns',
@@ -756,266 +844,310 @@ const PROFILE_FIELDS = {
   'profile-avoid': 'avoid_topics', 'profile-notes': 'custom_notes'
 };
 
-$('btn-settings').addEventListener('click', async () => { settingsOverlay.classList.add('open'); await loadProfile(); });
-$('settings-close').addEventListener('click', () => settingsOverlay.classList.remove('open'));
-settingsOverlay.addEventListener('click', e => { if (e.target === settingsOverlay) settingsOverlay.classList.remove('open'); });
+// Inject settings form HTML into #settings-content
+function injectSettingsContent() {
+  const container = $('settings-content');
+  if (!container || container.dataset.injected) return;
+  container.dataset.injected = 'true';
+
+  container.innerHTML = `
+    <!-- Profile Section -->
+    <div class="settings-section">
+      <div class="section-label">Profile</div>
+      <div class="settings-field">
+        <label>Display Name</label>
+        <input class="settings-input" type="text" id="profile-name" placeholder="What should they call you?">
+      </div>
+      <div class="settings-field">
+        <label>Pronouns</label>
+        <input class="settings-input" type="text" id="profile-pronouns" placeholder="e.g. she/her, he/him, they/them">
+      </div>
+      <div class="settings-field">
+        <label>Birthday</label>
+        <input class="settings-input" type="text" id="profile-birthday" placeholder="e.g. July 9">
+      </div>
+      <div class="settings-field">
+        <label>About Me</label>
+        <textarea class="settings-input" id="profile-about" rows="2" placeholder="Tell them about yourself..."></textarea>
+      </div>
+      <div class="settings-field">
+        <label>Interests</label>
+        <textarea class="settings-input" id="profile-interests" rows="2" placeholder="Games, hobbies, music, etc."></textarea>
+      </div>
+      <div class="settings-field">
+        <label>Pets</label>
+        <input class="settings-input" type="text" id="profile-pets" placeholder="Your furry (or not) friends">
+      </div>
+      <div class="settings-field">
+        <label>Important People</label>
+        <textarea class="settings-input" id="profile-people" rows="2" placeholder="Family, friends, partners..."></textarea>
+      </div>
+      <div class="settings-field">
+        <label>Communication Style</label>
+        <input class="settings-input" type="text" id="profile-comm-style" placeholder="e.g. casual, direct, gentle">
+      </div>
+      <div class="settings-field">
+        <label>Topics to Avoid</label>
+        <textarea class="settings-input" id="profile-avoid" rows="2" placeholder="Anything off-limits?"></textarea>
+      </div>
+      <div class="settings-field">
+        <label>Custom Notes</label>
+        <textarea class="settings-input" id="profile-notes" rows="2" placeholder="Anything else they should know..."></textarea>
+      </div>
+    </div>
+
+    <!-- Theme Section -->
+    <div class="settings-section">
+      <div class="section-label">Theme</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Light Mode</div>
+          <div class="settings-row-sublabel">Always light</div>
+        </div>
+        <label><input type="radio" name="theme-mode" value="light"></label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Dark Mode</div>
+          <div class="settings-row-sublabel">Always dark</div>
+        </div>
+        <label><input type="radio" name="theme-mode" value="dark"></label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Follow Time of Day</div>
+          <div class="settings-row-sublabel">Light during day, dark at night</div>
+        </div>
+        <label><input type="radio" name="theme-mode" value="system" checked></label>
+      </div>
+    </div>
+
+    <!-- Accessibility Section -->
+    <div class="settings-section">
+      <div class="section-label">Accessibility</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Protanopia</div>
+          <div class="settings-row-sublabel">Red-blind mode</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-protanopia">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Deuteranopia</div>
+          <div class="settings-row-sublabel">Green-blind mode</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-deuteranopia">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Tritanopia</div>
+          <div class="settings-row-sublabel">Blue-blind mode</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-tritanopia">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Reset Section -->
+    <div class="settings-section">
+      <div class="section-label">Resets</div>
+      <div class="sibling-reset-row">
+        <span class="sibling-reset-name">Abi</span>
+        <button class="reset-btn" data-sibling="abi" data-type="memory">Wipe Memory</button>
+        <button class="reset-btn" data-sibling="abi" data-type="personality">Reset Personality</button>
+        <button class="reset-btn danger" data-sibling="abi" data-type="full">Full Reset</button>
+        <button class="reset-btn sprite-switch" data-sibling="abi">Swap Sprite</button>
+      </div>
+      <div class="sibling-reset-row">
+        <span class="sibling-reset-name">David</span>
+        <button class="reset-btn" data-sibling="david" data-type="memory">Wipe Memory</button>
+        <button class="reset-btn" data-sibling="david" data-type="personality">Reset Personality</button>
+        <button class="reset-btn danger" data-sibling="david" data-type="full">Full Reset</button>
+        <button class="reset-btn sprite-switch" data-sibling="david">Swap Sprite</button>
+      </div>
+      <div class="sibling-reset-row">
+        <span class="sibling-reset-name">Quinn</span>
+        <button class="reset-btn" data-sibling="quinn" data-type="memory">Wipe Memory</button>
+        <button class="reset-btn" data-sibling="quinn" data-type="personality">Reset Personality</button>
+        <button class="reset-btn danger" data-sibling="quinn" data-type="full">Full Reset</button>
+        <button class="reset-btn sprite-switch" data-sibling="quinn">Swap Sprite</button>
+      </div>
+      <div id="reset-status" style="font-size:0.72rem;color:var(--text-tertiary);font-style:italic;margin-top:8px;"></div>
+    </div>
+
+    <!-- Save -->
+    <div style="display:flex;align-items:center;gap:12px;padding-top:8px;">
+      <button id="settings-save" class="save-profile-btn">Save Profile</button>
+      <span id="settings-status" style="font-size:0.72rem;color:var(--text-tertiary);font-style:italic;"></span>
+    </div>
+  `;
+
+  // Wire up save button
+  $('settings-save').addEventListener('click', saveSettings);
+
+  // Wire up reset buttons
+  container.querySelectorAll('.reset-btn:not(.sprite-switch)').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const sid = btn.dataset.sibling;
+      const type = btn.dataset.type;
+      const labels = { memory: 'Wipe Memory', personality: 'Reset Personality', full: 'Full Reset' };
+      const confirmMsg = `Are you sure you want to ${labels[type]} for ${NAME_MAP[sid]}? This can't be undone.`;
+      if (!confirm(confirmMsg)) return;
+
+      btn.disabled = true; btn.textContent = '...';
+      const r = await apiPost('/api/reset', { sibling: sid, type: type });
+      btn.disabled = false; btn.textContent = labels[type];
+
+      const status = $('reset-status');
+      if (r && r.reset) {
+        status.textContent = `${NAME_MAP[sid]}: ${labels[type]} complete.`;
+        if (sid === activeSibling) await refreshStatus();
+      } else {
+        status.textContent = 'Reset failed.';
+      }
+      setTimeout(() => { status.textContent = ''; }, 4000);
+    });
+  });
+
+  // Wire up sprite switch buttons
+  container.querySelectorAll('.sprite-switch').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const sid = btn.dataset.sibling;
+      const options = SPRITE_ASSIGNMENTS[sid];
+      if (!options || options.length < 2) return;
+
+      const current = spriteAssignments[sid];
+      const other = options.find(o => o !== current) || options[0];
+      spriteAssignments[sid] = other;
+
+      await apiPost('/api/profile', { sprite_assignments: spriteAssignments });
+
+      if (sid === activeSibling) {
+        await loadSpriteCharacter(other);
+        startSpriteLoop();
+      }
+
+      const status = $('reset-status');
+      status.textContent = `${NAME_MAP[sid]}: Sprite changed to ${other}.`;
+      setTimeout(() => { status.textContent = ''; }, 4000);
+    });
+  });
+}
+
+// Settings open/close
+$('settings-btn').addEventListener('click', async () => {
+  injectSettingsContent();
+  settingsOverlay.classList.remove('hidden');
+  await loadProfile();
+});
+$('settings-close-btn').addEventListener('click', () => settingsOverlay.classList.add('hidden'));
+settingsOverlay.addEventListener('click', e => { if (e.target === settingsOverlay) settingsOverlay.classList.add('hidden'); });
 
 async function loadProfile() {
   const p = await apiGet('/api/profile');
   if (!p) return;
   Object.entries(PROFILE_FIELDS).forEach(([elId, key]) => { const el = $(elId); if (el) el.value = p[key] || ''; });
-  // Also set colorblind toggles
   if (p.colorblind_mode) applyColorblind(p.colorblind_mode);
-  // Set theme mode radio
-  const themeMode = p.theme_mode || 'system';
-  document.querySelectorAll('input[name="theme-mode"]').forEach(r => { r.checked = r.value === themeMode; });
+  const tm = p.theme_mode || 'system';
+  document.querySelectorAll('input[name="theme-mode"]').forEach(r => { r.checked = r.value === tm; });
 }
 
-$('settings-save').addEventListener('click', async () => {
+async function saveSettings() {
   const data = {};
   Object.entries(PROFILE_FIELDS).forEach(([elId, key]) => { const el = $(elId); if (el) data[key] = el.value.trim(); });
-  data.onboarding_complete = true; // preserve onboarding flag
-  // Get colorblind mode from toggles instead of dropdown
+  data.onboarding_complete = true;
   data.colorblind_mode = updateColorblindFromToggles();
-  // Get theme mode
   const themeRadio = document.querySelector('input[name="theme-mode"]:checked');
   data.theme_mode = themeRadio ? themeRadio.value : 'system';
-  $('settings-save').disabled = true; $('settings-save').textContent = 'Saving...';
+
+  const saveBtn = $('settings-save');
+  saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
   const r = await apiPost('/api/profile', data);
-  $('settings-save').disabled = false; $('settings-save').textContent = 'Save Profile';
-  // Apply colorblind mode immediately
+  saveBtn.disabled = false; saveBtn.textContent = 'Save Profile';
+
   applyColorblind(data.colorblind_mode);
-  // Apply theme mode immediately
   themeMode = data.theme_mode;
   updateTime();
+
   const status = $('settings-status');
   status.textContent = r && r.saved ? 'Saved!' : 'Failed to save.';
   setTimeout(() => { status.textContent = ''; }, 3000);
-});
-
-// ─── Reset Buttons ───
-document.querySelectorAll('.reset-btn:not(.sprite-switch)').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const sid = btn.dataset.sibling;
-    const type = btn.dataset.type;
-    const labels = { memory: 'Wipe Memory', personality: 'Reset Personality', full: 'Full Reset' };
-    const confirmMsg = `Are you sure you want to ${labels[type]} for ${NAME_MAP[sid]}? This can't be undone.`;
-    if (!confirm(confirmMsg)) return;
-
-    btn.disabled = true; btn.textContent = '...';
-    const r = await apiPost('/api/reset', { sibling: sid, type: type });
-    btn.disabled = false; btn.textContent = labels[type];
-
-    const status = $('reset-status');
-    if (r && r.reset) {
-      status.textContent = `${NAME_MAP[sid]}: ${labels[type]} complete.`;
-      if (sid === activeSibling) await refreshStatus();
-    } else {
-      status.textContent = 'Reset failed.';
-    }
-    setTimeout(() => { status.textContent = ''; }, 4000);
-  });
-});
-
-// ─── Sprite Switch Buttons ───
-document.querySelectorAll('.sprite-switch').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const sid = btn.dataset.sibling;
-    const options = SPRITE_ASSIGNMENTS[sid];
-    if (!options || options.length < 2) return;
-
-    // Toggle to the other sprite option
-    const current = spriteAssignments[sid];
-    const other = options.find(o => o !== current) || options[0];
-    spriteAssignments[sid] = other;
-
-    // Save to profile
-    await apiPost('/api/profile', { sprite_assignments: spriteAssignments });
-
-    // If this is the active sibling, reload the sprite immediately
-    if (sid === activeSibling) {
-      await loadSpriteCharacter(other);
-      startSpriteLoop();
-    }
-
-    const status = $('reset-status');
-    status.textContent = `${NAME_MAP[sid]}: Sprite changed to ${other}.`;
-    setTimeout(() => { status.textContent = ''; }, 4000);
-  });
-});
+}
 
 // ─── End Chat ───
-const endChatBtn = $('end-chat-btn');
+const endBtn = $('end-btn');
 async function endChat() {
   if (sessionEnded || !isConnected) return;
-  endChatBtn.disabled = true;
-  const endTextSaving = endChatBtn.querySelector('.bento-action-text');
-  if (endTextSaving) endTextSaving.textContent = 'Saving...';
+  if (endBtn) endBtn.disabled = true;
   addSystemMessage(`Ending conversation... ${NAME_MAP[activeSibling]} is reflecting.`);
   inputEl.disabled = true; sendBtn.disabled = true;
 
   const r = await apiPost('/api/save');
   sessionEnded = true;
   stopNudgePolling();
-  setSpriteAnimation('Dead', true); // Session over — stay down
-  const endTextDone = endChatBtn.querySelector('.bento-action-text');
-  if (endTextDone) endTextDone.textContent = 'Ended';
-  endChatBtn.classList.add('ended');
+  setSpriteAnimation('Dead', true);
+  if (endBtn) endBtn.classList.add('ended');
   inputEl.placeholder = 'Session ended. Switch siblings or restart to chat again.';
   addSystemMessage(r && r.reflection ? `Session saved. ${NAME_MAP[activeSibling]} wrote a reflection.` : 'Session saved.');
   await refreshStatus();
-  await populateMemoryMiniList();
-  titlebarStatus.textContent = 'session ended';
+  if (siblingStatus) siblingStatus.textContent = 'session ended';
 }
-endChatBtn.addEventListener('click', endChat);
+if (endBtn) endBtn.addEventListener('click', endChat);
 
-// ─── Onboarding (First Run) ───
-const onboardingOverlay = $('onboarding-overlay');
+// ─── Onboarding ───
+// Onboarding HTML was removed from index.html in the layout rebuild.
+// For first-run users, we skip onboarding and go straight to chat.
+// A future update will re-implement onboarding as a modal or separate page.
 let onboardingComplete = false;
 
-// Map onboarding field IDs → profile API keys
-const OB_FIELDS = {
-  'ob-name': 'display_name', 'ob-pronouns': 'pronouns',
-  'ob-birthday': 'birthday', 'ob-about': 'about_me',
-  'ob-interests': 'interests', 'ob-pets': 'pets',
-  'ob-people': 'important_people', 'ob-avoid': 'avoid_topics',
-  'ob-notes': 'custom_notes', 'ob-comm-style': 'communication_style'
-};
-
-function showOnboarding() {
-  onboardingOverlay.classList.add('open');
-  // Show step 1
-  document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active'));
-  const step1 = document.querySelector('.onboarding-step[data-step="1"]');
-  if (step1) step1.classList.add('active');
+async function handleFirstRun() {
+  // Auto-create a basic profile so the app works without onboarding
+  const profileData = {
+    onboarding_complete: true,
+    theme_mode: 'system',
+    colorblind_mode: 'none'
+  };
+  await apiPost('/api/profile', profileData);
+  // Initialize sprites
+  initSpriteAssignments(null);
+  if (spriteAssignments[activeSibling]) {
+    await loadSpriteCharacter(spriteAssignments[activeSibling]);
+    startSpriteLoop();
+  }
+  // Get first message from default sibling
+  const firstMsg = await apiPost('/api/first-message', { sibling: activeSibling });
+  if (firstMsg && firstMsg.messages) {
+    for (let i = 0; i < firstMsg.messages.length; i++) {
+      if (i > 0) await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+      addMessage(firstMsg.messages[i], activeSibling);
+    }
+    if (firstMsg.emotions || firstMsg.dominant_emotion) {
+      updatePanels({
+        emotions: firstMsg.emotions,
+        dominant_emotion: firstMsg.dominant_emotion,
+        energy: firstMsg.energy,
+        relationship: firstMsg.relationship
+      });
+    }
+  } else {
+    addMessage('Hey.', activeSibling);
+  }
 }
-
-function goToStep(n) {
-  document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active'));
-  const target = document.querySelector(`.onboarding-step[data-step="${n}"]`);
-  if (target) target.classList.add('active');
-  // Update dots on the target step
-  const dots = target.querySelectorAll('.onboarding-step-dots .dot');
-  dots.forEach((dot, i) => {
-    dot.classList.toggle('active', i === n - 1);
-  });
-}
-
-// Wire up all next/back buttons
-document.querySelectorAll('.onboarding-btn[data-action]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const step = btn.closest('.onboarding-step');
-    const currentStep = parseInt(step.dataset.step);
-    if (btn.dataset.action === 'next') goToStep(currentStep + 1);
-    if (btn.dataset.action === 'back') goToStep(currentStep - 1);
-  });
-});
-
-// Wire up theme card selection (step 6)
-let selectedTheme = 'system';
-document.querySelectorAll('.theme-card').forEach(card => {
-  card.addEventListener('click', () => {
-    document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    selectedTheme = card.dataset.theme;
-  });
-});
-
-// Wire up sibling card selection (step 7)
-document.querySelectorAll('.sibling-card').forEach(card => {
-  card.addEventListener('click', async () => {
-    let chosen = card.dataset.sibling;
-    // "Choose for me" — pick random
-    if (chosen === 'random') {
-      const options = ['abi', 'david', 'quinn'];
-      chosen = options[Math.floor(Math.random() * options.length)];
-    }
-
-    // Collect all onboarding form data
-    const profileData = {};
-    Object.entries(OB_FIELDS).forEach(([elId, key]) => {
-      const el = $(elId);
-      if (el) profileData[key] = el.value.trim();
-    });
-    // Get colorblind selection
-    const cbRadio = document.querySelector('input[name="colorblind"]:checked');
-    profileData.colorblind_mode = cbRadio ? cbRadio.value : 'none';
-    profileData.theme_mode = selectedTheme;
-    profileData.onboarding_complete = true;
-
-    // Disable all cards while saving
-    document.querySelectorAll('.sibling-card').forEach(c => { c.disabled = true; c.style.opacity = '0.5'; });
-
-    // Save profile
-    await apiPost('/api/profile', profileData);
-
-    // Switch to chosen sibling
-    if (chosen !== activeSibling) {
-      await apiPost('/api/switch', { sibling: chosen });
-    }
-    activeSibling = chosen;
-
-    // Apply theme + colorblind
-    applyTheme(activeSibling);
-    applyColorblind(profileData.colorblind_mode);
-
-    // Update UI
-    titlebarName.textContent = NAME_MAP[activeSibling];
-    avatarLabel.textContent = activeSibling[0].toUpperCase();
-    inputEl.placeholder = `Talk to ${NAME_MAP[activeSibling]}...`;
-    document.querySelectorAll('.sib-bubble').forEach(b => {
-      b.classList.toggle('active', b.dataset.sibling === activeSibling);
-    });
-
-    // Close onboarding
-    onboardingOverlay.classList.remove('open');
-    onboardingComplete = true;
-    titlebarStatus.textContent = 'online';
-
-    // Initialize sprites for first time
-    initSpriteAssignments(null); // No profile yet, generates random
-    if (spriteAssignments[activeSibling]) {
-      await loadSpriteCharacter(spriteAssignments[activeSibling]);
-      startSpriteLoop();
-    }
-
-    // The sibling sends the first message
-    const firstMsg = await apiPost('/api/first-message', { sibling: activeSibling });
-    if (firstMsg && firstMsg.messages) {
-      for (let i = 0; i < firstMsg.messages.length; i++) {
-        if (i > 0) await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
-        addMessage(firstMsg.messages[i], activeSibling);
-      }
-      if (firstMsg.emotions || firstMsg.dominant_emotion) {
-        updateSidebar({
-          emotions: firstMsg.emotions,
-          dominant_emotion: firstMsg.dominant_emotion,
-          energy: firstMsg.energy,
-          relationship: firstMsg.relationship
-        });
-      }
-    } else {
-      // Fallback if first-message endpoint fails
-      addMessage(`Hey.`, activeSibling);
-    }
-
-    // Now start all the background timers
-    await refreshStatus();
-    loadSiblingStatuses();
-    updateTime();
-    setInterval(updateTime, 1000);
-    setInterval(refreshStatus, 30000);
-    setInterval(loadSiblingStatuses, 300000);
-    startNudgePolling();
-  });
-});
 
 // ─── Self-Initiated Messaging (Nudge Polling) ───
 let nudgeTimer = null;
 let nudgePaused = false;
 
 function randomNudgeInterval() {
-  // 45-90 seconds, randomized so it doesn't feel robotic
   return (45 + Math.floor(Math.random() * 45)) * 1000;
 }
 
@@ -1024,34 +1156,26 @@ async function checkForNudge() {
 
   const result = await apiGet('/api/nudge');
   if (result && result.nudge && result.messages) {
-    // Sibling wants to talk! Show their messages with staggered timing
     const messages = result.messages;
     for (let i = 0; i < messages.length; i++) {
-      // Stagger multiple messages (like real burst texting)
       if (i > 0) await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
       addMessage(messages[i], activeSibling);
     }
-    // Update sidebar with new emotional state
     if (result.emotions || result.dominant_emotion) {
-      updateSidebar({
+      updatePanels({
         emotions: result.emotions,
         dominant_emotion: result.dominant_emotion,
         energy: result.energy
       });
     }
-    // Play a subtle notification sound (if we add one later)
-    // Flash the titlebar briefly to draw attention
-    flashTitlebar();
+    flashTopBar();
   }
 
-  // Schedule next check with randomized interval
   nudgeTimer = setTimeout(checkForNudge, randomNudgeInterval());
 }
 
 function startNudgePolling() {
   if (nudgeTimer) clearTimeout(nudgeTimer);
-  // Initial delay: wait 2-4 minutes before first nudge check
-  // (don't interrupt right after boot)
   const initialDelay = (120 + Math.floor(Math.random() * 120)) * 1000;
   nudgeTimer = setTimeout(checkForNudge, initialDelay);
 }
@@ -1060,12 +1184,11 @@ function stopNudgePolling() {
   if (nudgeTimer) { clearTimeout(nudgeTimer); nudgeTimer = null; }
 }
 
-function flashTitlebar() {
-  // Brief visual pulse on the titlebar to signal incoming message
-  const titlebar = $('titlebar');
-  if (!titlebar) return;
-  titlebar.classList.add('nudge-flash');
-  setTimeout(() => titlebar.classList.remove('nudge-flash'), 1500);
+function flashTopBar() {
+  const topBar = $('top-bar');
+  if (!topBar) return;
+  topBar.classList.add('nudge-flash');
+  setTimeout(() => topBar.classList.remove('nudge-flash'), 1500);
 }
 
 // ─── Sprite Controller ───
@@ -1092,12 +1215,12 @@ let spriteImages = {};
 let spriteAnim = 'Idle';
 let spriteFrame = 0;
 let spriteTimer = null;
-let spriteLocked = false;       // True when animation shouldn't be interrupted (Dead, drag)
+let spriteLocked = false;
 const SPRITE_FPS = 150;
 const SPRITE_SIZE = 128;
 
 // ─── Sprite: Interaction State ───
-let pokeTimes = [];             // Timestamps of recent pokes
+let pokeTimes = [];
 let isDragging = false;
 let dragOffsetX = 0;
 
@@ -1135,7 +1258,7 @@ async function loadSpriteCharacter(charName) {
 
 function setSpriteAnimation(animName, lock = false) {
   if (!currentSpriteChar) return;
-  if (spriteLocked && !lock) return;  // Don't interrupt locked animations
+  if (spriteLocked && !lock) return;
   if (spriteAnim === animName && !lock) return;
   spriteAnim = animName;
   spriteFrame = 0;
@@ -1163,7 +1286,6 @@ function renderSpriteFrame() {
   spriteFrame++;
   if (spriteFrame >= frameCount) {
     if (spriteAnim === 'Dead' && !sessionEnded) {
-      // Overwhelmed — stay down briefly, then revive
       spriteFrame = frameCount - 1;
       if (!isDragging) {
         setTimeout(() => {
@@ -1175,7 +1297,7 @@ function renderSpriteFrame() {
         }, 3000);
       }
     } else if (spriteAnim === 'Dead' && sessionEnded) {
-      spriteFrame = frameCount - 1; // Stay dead on session end
+      spriteFrame = frameCount - 1;
     } else if (spriteAnim === 'Jump' || spriteAnim === 'Hurt') {
       spriteFrame = 0;
       spriteLocked = false;
@@ -1185,32 +1307,27 @@ function renderSpriteFrame() {
       spriteLocked = false;
       spriteAnim = 'Idle';
     } else {
-      spriteFrame = 0; // Loop (Idle, Walk, Run while dragging)
+      spriteFrame = 0;
     }
   }
 }
 
 // ─── Sprite: Event-Driven Reactions ───
-
-// Called when user sends a message — sprite gets excited
 function spriteOnUserMessage() {
   if (spriteLocked || sessionEnded) return;
   setSpriteAnimation('Jump');
 }
 
-// Called when AI starts thinking — sprite paces
 function spriteOnThinking() {
   if (spriteLocked || sessionEnded) return;
   setSpriteAnimation('Walk');
 }
 
-// Called when AI finishes responding — back to idle (emotion may override)
 function spriteOnResponse() {
   if (spriteLocked || sessionEnded) return;
   setSpriteAnimation('Idle');
 }
 
-// Called when emotions update — react to strong feelings
 function emotionSpriteReaction(dominantEmotion) {
   if (!dominantEmotion || spriteLocked || sessionEnded) return;
   const e = dominantEmotion.toLowerCase();
@@ -1230,48 +1347,49 @@ function initSpriteInteractions() {
   spriteCanvas.style.cursor = 'grab';
   spriteCanvas.style.pointerEvents = 'auto';
 
-  // Make sure the sprite area allows pointer events on the canvas
-  const area = $('sprite-area');
-  if (area) area.style.pointerEvents = 'none'; // Area itself is transparent to clicks
-  spriteCanvas.style.pointerEvents = 'auto';    // But the canvas catches them
+  // The chibi-area itself is transparent to clicks — only the canvas catches them
+  const area = $('chibi-area');
+  if (area) area.style.pointerEvents = 'none';
+  spriteCanvas.style.pointerEvents = 'auto';
 
-  // --- Click / Poke ---
   spriteCanvas.addEventListener('mousedown', (e) => {
     if (sessionEnded) return;
+    e.preventDefault();
     const now = Date.now();
 
-    // Check for overwhelm (5 pokes in 8 seconds)
+    // Poke tracking — 5 pokes in 8 seconds = death animation
     pokeTimes.push(now);
     pokeTimes = pokeTimes.filter(t => now - t < 8000);
     if (pokeTimes.length >= 5) {
-      // Overwhelmed! Pass out.
       pokeTimes = [];
       setSpriteAnimation('Dead', true);
       return;
     }
 
-    // Start drag tracking
     isDragging = false;
-    dragOffsetX = e.clientX - spriteCanvas.getBoundingClientRect().left;
+    const startX = e.clientX;
+    const areaRect = area.getBoundingClientRect();
+    const canvasRect = spriteCanvas.getBoundingClientRect();
+    // How far into the canvas the mouse clicked
+    const grabOffset = e.clientX - canvasRect.left;
 
     const onMove = (me) => {
       if (!isDragging) {
-        // Only start drag if moved more than 5px
-        if (Math.abs(me.clientX - (e.clientX)) > 5) {
+        // Need to move 12px before it counts as a drag (not a click)
+        if (Math.abs(me.clientX - startX) > 12) {
           isDragging = true;
           spriteCanvas.style.cursor = 'grabbing';
-          spriteCanvas.style.transition = 'none'; // Disable smooth transition while dragging
+          spriteCanvas.style.transition = 'none';
           setSpriteAnimation('Run', true);
         }
         return;
       }
-      // Move sprite horizontally within the sprite area
-      const areaRect = area.getBoundingClientRect();
-      let newLeft = me.clientX - areaRect.left - dragOffsetX;
+      // Calculate new left relative to chibi-area
+      let newLeft = me.clientX - areaRect.left - grabOffset;
       newLeft = Math.max(0, Math.min(newLeft, areaRect.width - 180));
 
-      // Flip based on movement direction
-      const currentLeft = spriteCanvas.offsetLeft;
+      // Flip sprite based on drag direction
+      const currentLeft = parseFloat(spriteCanvas.style.left) || (areaRect.width / 2 - 90);
       if (newLeft > currentLeft) {
         spriteCanvas.style.transform = 'none';
       } else if (newLeft < currentLeft) {
@@ -1286,19 +1404,16 @@ function initSpriteInteractions() {
       spriteCanvas.style.cursor = 'grab';
 
       if (isDragging) {
-        // Was dragging — stay where dropped, just return to idle
+        // Finished dragging — settle back to idle
         isDragging = false;
         spriteLocked = true;
-        
-        // Just restore cursor and play idle (no snap back)
         spriteCanvas.style.transition = 'transform 0.3s ease';
-        
         setTimeout(() => {
           spriteLocked = false;
           setSpriteAnimation('Idle');
         }, 200);
       } else {
-        // Was a click/poke — play Hurt (ouch!)
+        // Plain click — poke reaction
         if (!spriteLocked) {
           setSpriteAnimation('Hurt');
         }
@@ -1313,7 +1428,7 @@ function initSpriteInteractions() {
 // ─── Boot ───
 async function boot() {
   addSystemMessage('Waking up...');
-  titlebarStatus.textContent = 'connecting...';
+  if (siblingStatus) siblingStatus.textContent = 'connecting...';
 
   let attempts = 0;
   while (attempts < 30) {
@@ -1329,28 +1444,27 @@ async function boot() {
 
   if (!isConnected) {
     addSystemMessage('Could not connect to the brain server.');
-    titlebarStatus.textContent = 'offline';
+    if (siblingStatus) siblingStatus.textContent = 'offline';
     return;
   }
 
-  // Check if this is a first-run (onboarding needed)
+  // Check if this is a first-run
   const profile = await apiGet('/api/profile');
   const needsOnboarding = !profile || !profile.onboarding_complete;
 
   if (needsOnboarding) {
-    // First run — show onboarding, don't start normal flow
-    titlebarStatus.textContent = 'setting up...';
-    showOnboarding();
-    return; // Boot continues after onboarding sibling selection
+    if (siblingStatus) siblingStatus.textContent = 'setting up...';
+    await handleFirstRun();
+    // Continue to normal flow after first-run setup
   }
 
-  // Returning user — apply saved colorblind mode
-  if (profile && profile.colorblind_mode) applyColorblind(profile.colorblind_mode);
-
-  // Apply saved theme mode
-  if (profile && profile.theme_mode) {
-    themeMode = profile.theme_mode;
-    updateTime(); // Apply the theme immediately
+  // Returning user — apply saved settings
+  if (profile) {
+    if (profile.colorblind_mode) applyColorblind(profile.colorblind_mode);
+    if (profile.theme_mode) {
+      themeMode = profile.theme_mode;
+      updateTime();
+    }
   }
 
   // Initialize sprites
@@ -1362,20 +1476,22 @@ async function boot() {
 
   // Apply theme for active sibling
   applyTheme(activeSibling);
-  titlebarName.textContent = NAME_MAP[activeSibling];
-  avatarLabel.textContent = activeSibling[0].toUpperCase();
+  if (siblingName) siblingName.textContent = NAME_MAP[activeSibling];
   inputEl.placeholder = `Talk to ${NAME_MAP[activeSibling]}...`;
-  document.querySelectorAll('.sib-bubble').forEach(b => {
+  document.querySelectorAll('.sibling-avatar-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.sibling === activeSibling);
   });
 
-  titlebarStatus.textContent = 'online';
+  if (siblingStatus) siblingStatus.textContent = 'online';
 
-  const greeting = await apiGet('/api/greeting');
-  if (greeting) {
-    addSystemMessage(`Conversation #${greeting.conversation_number} | ${greeting.time_of_day}`);
-    addMessage(greeting.greeting, activeSibling);
-    moodText.textContent = `Feeling ${MOOD_DISPLAY[(greeting.mood_hint || '').toLowerCase()] || greeting.mood_hint}`;
+  // Get greeting (only for returning users — first-run already got first-message)
+  if (!needsOnboarding) {
+    const greeting = await apiGet('/api/greeting');
+    if (greeting) {
+      addSystemMessage(`Conversation #${greeting.conversation_number} | ${greeting.time_of_day}`);
+      addMessage(greeting.greeting, activeSibling);
+      if (moodLabel) moodLabel.textContent = `Feeling ${MOOD_DISPLAY[(greeting.mood_hint || '').toLowerCase()] || greeting.mood_hint}`;
+    }
   }
 
   await refreshStatus();
@@ -1384,9 +1500,7 @@ async function boot() {
   updateTime();
   setInterval(updateTime, 1000);
   setInterval(refreshStatus, 30000);
-  // Refresh sibling statuses every 5 minutes
   setInterval(loadSiblingStatuses, 300000);
-  // Start self-initiated message polling
   startNudgePolling();
 }
 

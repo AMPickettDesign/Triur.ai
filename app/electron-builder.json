@@ -2,6 +2,11 @@
   "appId": "com.ampickettdesign.triur",
   "productName": "Triur.ai",
   "copyright": "Copyright © 2026 Ashley Pickett",
+  "publish": {
+    "provider": "github",
+    "owner": "AMPickettDesign",
+    "repo": "Triur.ai"
+  },
   "directories": {
     "output": "../dist"
   },

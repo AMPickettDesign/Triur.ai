@@ -1,13 +1,16 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::process::Command;
 use std::path::PathBuf;
+use std::process::Command;
 
 fn get_repo_root() -> PathBuf {
-    // In dev, executable is in src-tauri/target/debug/
-    // Repo root is 3 levels up
     let exe = std::env::current_exe().unwrap_or_default();
     exe.ancestors().nth(4).unwrap_or(&exe).to_path_buf()
+}
+
+fn get_bundle_dir() -> PathBuf {
+    let exe = std::env::current_exe().unwrap_or_default();
+    exe.parent().unwrap_or(&exe).to_path_buf()
 }
 
 fn start_python_server() {
@@ -29,17 +32,15 @@ fn start_python_server() {
             .current_dir(&repo_root)
             .spawn();
     } else {
+        let bundle_dir = get_bundle_dir();
         let exe_name = if cfg!(target_os = "windows") {
             "triur-brain.exe"
         } else {
             "triur-brain"
         };
-        let exe = std::env::current_exe().unwrap_or_default();
-        let exe_dir = exe.parent().unwrap_or(&exe);
-        let brain_path = exe_dir.join(exe_name);
-        let _ = Command::new(&brain_path)
-            .current_dir(exe_dir)
-            .spawn();
+        let brain_path = bundle_dir.join("triur-brain").join(exe_name);
+        let brain_dir = brain_path.parent().unwrap_or(&bundle_dir);
+        let _ = Command::new(&brain_path).current_dir(brain_dir).spawn();
     }
 }
 

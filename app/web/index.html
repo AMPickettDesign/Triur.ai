@@ -11,6 +11,12 @@
 </script>
 </head>
 <body>
+  <div id="ollama-error" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:9999; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; padding:40px; box-sizing:border-box;">
+    <h2 style="margin-bottom:16px;">⚠️ Ollama isn't running</h2>
+    <p style="color:#666; text-align:center; max-width:400px; margin-bottom:24px;">Triur.ai needs Ollama to think. Please start Ollama and then click Retry.</p>
+    <button onclick="checkOllama()" style="padding:12px 32px; background:#e75480; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer;">Retry</button>
+    <p style="margin-top:16px; font-size:13px; color:#999;">Don't have Ollama? <a href="https://ollama.com" target="_blank">Download it here</a></p>
+  </div>
   <div id="app-wrapper">
 
     <!-- Ambient background gradient — shifts per sibling via CSS -->

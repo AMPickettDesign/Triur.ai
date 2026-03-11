@@ -1,3 +1,24 @@
+async function checkOllama() {
+  try {
+    const res = await fetch('http://127.0.0.1:5000/api/ping', { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const el = document.getElementById('ollama-error');
+      if (el) el.style.display = 'none';
+      return true;
+    }
+  } catch (e) {}
+  const el = document.getElementById('ollama-error');
+  if (el) el.style.display = 'flex';
+  return false;
+}
+
+let ollamaCheckInterval = setInterval(async () => {
+  const connected = await checkOllama();
+  if (connected) clearInterval(ollamaCheckInterval);
+}, 5000);
+
+checkOllama();
+
 /**
  * Triur.ai — Renderer
  * All UI logic: chat, sibling switching, theme swapping, reactions,

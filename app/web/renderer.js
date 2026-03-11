@@ -75,7 +75,7 @@ function updateColorblindFromToggles() {
 }
 
 // ─── IPC (window controls) ───
-const { invoke } = window.__TAURI__.tauri;
+const invoke = window.__invoke || ((...args) => window.__TAURI__?.core?.invoke(...args));
 $('minimize-btn').addEventListener('click', () => invoke('minimize_window'));
 $('maximize-btn').addEventListener('click', () => invoke('maximize_window'));
 $('close-btn').addEventListener('click', () => invoke('close_window'));

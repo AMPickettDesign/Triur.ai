@@ -415,25 +415,35 @@ function updateMemoryPanel(convos = 0, mem = null) {
   statsRow.innerHTML = `<span class="memory-label">Conversations</span><span class="memory-count">${convos}</span>`;
   memoryStats.appendChild(statsRow);
 
-  // Render fact categories (likes, dislikes, etc.)
-  const categoryLabels = {
-    likes: 'Likes', dislikes: 'Dislikes', preferences: 'Preferences',
-    personal: 'Personal', interests: 'Interests', people: 'People',
-    pets: 'Pets', work: 'Work', general: 'General'
-  };
+  // Render facts — flatten nested structure into readable items
+  // Facts come as { "category_key": { "fact_key": { value: "...", ... } } }
+  const factItems = [];
   for (const [cat, items] of Object.entries(facts)) {
     if (!items || typeof items !== 'object') continue;
-    const entries = Object.entries(items);
-    if (entries.length === 0) continue;
-    const catLabel = categoryLabels[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+    for (const [key, val] of Object.entries(items)) {
+      // Extract the display value from nested objects
+      const display = (val && typeof val === 'object') ? (val.value || val.text || JSON.stringify(val)) : val;
+      if (!display || display === '{}') continue;
+      // Clean up the category key for display (e.g. "user|world|preference" -> "World Preference")
+      const label = cat
+        .replace(/^(user|abi|david|quinn)\|?/i, '')
+        .replace(/\|/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase())
+        .trim() || 'General';
+      factItems.push({ label, key, display });
+    }
+  }
+  if (factItems.length > 0) {
     const header = document.createElement('div');
     header.className = 'memory-row';
-    header.innerHTML = `<span class="memory-label">${catLabel}</span><span class="memory-count">${entries.length}</span>`;
+    header.innerHTML = `<span class="memory-label">User</span><span class="memory-count">${factItems.length}</span>`;
     memoryStats.appendChild(header);
-    entries.forEach(([key, val]) => {
+    factItems.forEach(({ label, display }) => {
       const item = document.createElement('div');
       item.className = 'mem-item';
-      item.innerHTML = `<span class="mem-key">${key}:</span> ${val}`;
+      // Truncate long values
+      const short = display.length > 80 ? display.slice(0, 77) + '...' : display;
+      item.innerHTML = `<span class="mem-key">${label}:</span> ${short}`;
       memoryStats.appendChild(item);
     });
   }
@@ -455,7 +465,7 @@ function updateMemoryPanel(convos = 0, mem = null) {
   }
 
   // Empty state
-  if (factCount === 0 && opinionCount === 0) {
+  if (factItems.length === 0 && opinionCount === 0) {
     const empty = document.createElement('div');
     empty.className = 'mem-item';
     empty.textContent = 'Still getting to know you...';

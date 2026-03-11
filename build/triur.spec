@@ -78,5 +78,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='../app/assets/icon.ico',
+    icon='../app/web/assets/icon.ico',
 )

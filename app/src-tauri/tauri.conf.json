@@ -31,8 +31,8 @@
       "icons/icon.png",
       "icons/icon.ico"
     ],
-    "resources": {
-      "../../dist/triur-brain/*": "triur-brain/"
-    }
+    "resources": [
+      "../../dist/triur-brain"
+    ]
   }
 }

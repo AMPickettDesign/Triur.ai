@@ -579,7 +579,7 @@ body.colorblind-tritanopia.nighttime, [data-theme="dark"] body.colorblind-tritan
 #messages-area {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 16px;
+  padding: 12px 16px 100px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -634,22 +634,26 @@ body.colorblind-tritanopia.nighttime, [data-theme="dark"] body.colorblind-tritan
   margin-top: 4px;
 }
 
-/* Chibi area */
+/* Chibi area — overlays bottom of chat, doesn't take layout space */
 #chibi-area {
-  height: 160px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 8px;
-  position: relative;
+  pointer-events: none;
+  z-index: 2;
 }
 
 #chibi-container {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  width: 100%;
-  height: 100%;
+  pointer-events: none;
 }
 
 /* Input area */
@@ -1468,7 +1472,8 @@ body {
 #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
 /* ─── Message Bubbles ─── */
-.message-wrapper { display: flex; flex-direction: column; max-width: 80%; position: relative; }
+.message-wrapper { display: flex; flex-direction: column; max-width: 80%; position: relative; z-index: 1; }
+.message-wrapper:hover { z-index: 5; }
 .message-wrapper.user { align-self: flex-end; }
 .message-wrapper.abi, .message-wrapper.david, .message-wrapper.quinn { align-self: flex-start; }
 .message-wrapper.system { align-self: center; }
